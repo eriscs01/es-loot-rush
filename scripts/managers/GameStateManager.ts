@@ -6,6 +6,7 @@ import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { GameConfig } from "../types";
+import { DYNAMIC_KEYS } from "../config/constants";
 
 export class GameStateManager {
   private gameActive = false;
@@ -24,19 +25,30 @@ export class GameStateManager {
   ) {}
 
   initialize(): void {
+    this.registerDynamicProperties();
     this.configManager.loadConfig();
-    this.currentRound = 1;
-    this.roundStartTick = system.currentTick;
+    this.teamManager.loadRostersFromProperties();
+    this.ensureDefaults();
+    this.currentRound = this.getNumberProperty(DYNAMIC_KEYS.currentRound, 1);
+    this.roundStartTick = this.getNumberProperty(DYNAMIC_KEYS.roundStartTick, system.currentTick);
   }
 
   startGame(): void {
+    this.setBooleanProperty(DYNAMIC_KEYS.gameActive, true);
+    this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, true);
+    this.setNumberProperty(DYNAMIC_KEYS.crimsonScore, 0);
+    this.setNumberProperty(DYNAMIC_KEYS.azureScore, 0);
     this.gameActive = true;
     this.gamePaused = false;
     this.currentRound = 1;
     this.roundStartTick = system.currentTick;
+    this.persistRoundState();
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
   }
 
   endGame(): void {
+    this.setBooleanProperty(DYNAMIC_KEYS.gameActive, false);
     this.gameActive = false;
     this.gamePaused = false;
   }
@@ -64,6 +76,7 @@ export class GameStateManager {
     if (this.currentRound < totalRounds) {
       this.currentRound += 1;
       this.roundStartTick = system.currentTick;
+      this.persistRoundState();
     } else {
       this.endGame();
     }
@@ -72,6 +85,7 @@ export class GameStateManager {
   forceRound(roundNumber: number): void {
     this.currentRound = roundNumber;
     this.roundStartTick = system.currentTick;
+    this.persistRoundState();
   }
 
   getGameConfig(): GameConfig {
@@ -79,10 +93,85 @@ export class GameStateManager {
   }
 
   isGameActive(): boolean {
-    return this.gameActive;
+    const stored = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.gameActive);
+    return typeof stored === "boolean" ? stored : this.gameActive;
   }
 
   isPaused(): boolean {
     return this.gamePaused;
+  }
+
+  setTeamsFormed(flag: boolean): void {
+    this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, flag);
+  }
+
+  private registerDynamicProperties(): void {
+    const anyWorld = world as unknown as {
+      beforeEvents?: { worldInitialize?: { subscribe: (callback: (ev: any) => void) => void } };
+      afterEvents?: { worldInitialize?: { subscribe: (callback: (ev: any) => void) => void } };
+    };
+
+    const subscribe =
+      anyWorld.beforeEvents?.worldInitialize?.subscribe ?? anyWorld.afterEvents?.worldInitialize?.subscribe;
+
+    subscribe?.((event: any) => {
+      const { propertyRegistry } = event ?? {};
+      if (!propertyRegistry) return;
+      propertyRegistry.registerBoolean(DYNAMIC_KEYS.gameActive);
+      propertyRegistry.registerBoolean(DYNAMIC_KEYS.teamsFormed);
+      propertyRegistry.registerNumber(DYNAMIC_KEYS.currentRound);
+      propertyRegistry.registerNumber(DYNAMIC_KEYS.roundStartTick);
+      propertyRegistry.registerNumber(DYNAMIC_KEYS.crimsonScore);
+      propertyRegistry.registerNumber(DYNAMIC_KEYS.azureScore);
+      propertyRegistry.registerString(DYNAMIC_KEYS.activeChallenges, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.completedChallenges, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.config, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.crimsonPlayers, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.azurePlayers, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.chestCrimsonLocation, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.chestAzureLocation, 16000);
+      propertyRegistry.registerString(DYNAMIC_KEYS.spawnLocation, 16000);
+    });
+  }
+
+  private ensureDefaults(): void {
+    this.setBooleanProperty(DYNAMIC_KEYS.gameActive, this.getBooleanProperty(DYNAMIC_KEYS.gameActive, false));
+    this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, this.getBooleanProperty(DYNAMIC_KEYS.teamsFormed, false));
+    this.setNumberProperty(DYNAMIC_KEYS.currentRound, this.getNumberProperty(DYNAMIC_KEYS.currentRound, 1));
+    this.setNumberProperty(
+      DYNAMIC_KEYS.roundStartTick,
+      this.getNumberProperty(DYNAMIC_KEYS.roundStartTick, system.currentTick)
+    );
+    this.setNumberProperty(DYNAMIC_KEYS.crimsonScore, this.getNumberProperty(DYNAMIC_KEYS.crimsonScore, 0));
+    this.setNumberProperty(DYNAMIC_KEYS.azureScore, this.getNumberProperty(DYNAMIC_KEYS.azureScore, 0));
+    if (typeof this.worldRef.getDynamicProperty(DYNAMIC_KEYS.activeChallenges) !== "string") {
+      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
+    }
+    if (typeof this.worldRef.getDynamicProperty(DYNAMIC_KEYS.completedChallenges) !== "string") {
+      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
+    }
+  }
+
+  private persistRoundState(): void {
+    this.setNumberProperty(DYNAMIC_KEYS.currentRound, this.currentRound);
+    this.setNumberProperty(DYNAMIC_KEYS.roundStartTick, this.roundStartTick);
+  }
+
+  private setBooleanProperty(key: string, value: boolean): void {
+    this.worldRef.setDynamicProperty(key, value);
+  }
+
+  private getBooleanProperty(key: string, fallback: boolean): boolean {
+    const val = this.worldRef.getDynamicProperty(key);
+    return typeof val === "boolean" ? val : fallback;
+  }
+
+  private setNumberProperty(key: string, value: number): void {
+    this.worldRef.setDynamicProperty(key, value);
+  }
+
+  private getNumberProperty(key: string, fallback: number): number {
+    const val = this.worldRef.getDynamicProperty(key);
+    return typeof val === "number" ? val : fallback;
   }
 }

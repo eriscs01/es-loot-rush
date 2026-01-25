@@ -1,5 +1,6 @@
 import { world } from "@minecraft/server";
 import { GameConfig } from "../types";
+import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
 
 const DEFAULT_CONFIG: GameConfig = {
   easyChallengeCount: 3,
@@ -10,7 +11,6 @@ const DEFAULT_CONFIG: GameConfig = {
 };
 
 export class ConfigManager {
-  private readonly configKey = "lootRush:config";
   private config: GameConfig;
 
   constructor(private readonly worldRef = world) {
@@ -18,7 +18,7 @@ export class ConfigManager {
   }
 
   loadConfig(): void {
-    const raw = this.worldRef.getDynamicProperty(this.configKey);
+    const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.config);
     if (typeof raw !== "string") {
       this.resetToDefaults();
       return;
@@ -34,7 +34,10 @@ export class ConfigManager {
 
   saveConfig(): void {
     try {
-      this.worldRef.setDynamicProperty(this.configKey, JSON.stringify(this.config));
+      const payload = JSON.stringify(this.config);
+      if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
+        this.worldRef.setDynamicProperty(DYNAMIC_KEYS.config, payload);
+      }
     } catch {
       // Dynamic properties not yet initialized; ignore for now.
     }
