@@ -1,4 +1,4 @@
-import { Player, system, world } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { TeamManager } from "./TeamManager";
 import { ChallengeManager } from "./ChallengeManager";
@@ -47,6 +47,7 @@ export class GameStateManager {
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
     this.startRoundTimer();
+    this.chestManager.monitorChests();
   }
 
   endGame(announceWinner = false): void {
@@ -54,6 +55,7 @@ export class GameStateManager {
     this.gameActive = false;
     this.gamePaused = false;
     this.stopRoundTimer();
+    this.chestManager.stopMonitoring();
     if (announceWinner) {
       this.announceWinner();
     }

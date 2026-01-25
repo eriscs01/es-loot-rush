@@ -11,9 +11,9 @@ import { AudioManager } from "./managers/AudioManager";
 const configManager = new ConfigManager(world);
 const teamManager = new TeamManager(world, configManager);
 const challengeManager = new ChallengeManager(configManager);
-const chestManager = new ChestManager(world, configManager);
 const hudManager = new HUDManager(world);
 const audioManager = new AudioManager(world);
+const chestManager = new ChestManager(world, challengeManager, teamManager, audioManager, hudManager);
 
 const gameStateManager = new GameStateManager(
   configManager,

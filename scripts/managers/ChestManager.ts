@@ -1,16 +1,23 @@
-import { BlockPermutation, Dimension, Vector3, world } from "@minecraft/server";
-import { ConfigManager } from "./ConfigManager";
+import { BlockPermutation, Container, Dimension, Vector3, system, world } from "@minecraft/server";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { ChallengeManager, ChallengeRecord } from "./ChallengeManager";
+import { TeamManager } from "./TeamManager";
+import { AudioManager } from "./AudioManager";
+import { HUDManager } from "./HUDManager";
 
 export class ChestManager {
   private crimsonChestLocation: Vector3 | undefined;
   private azureChestLocation: Vector3 | undefined;
   private spawnLocation: Vector3 | undefined;
+  private monitorHandle?: number;
 
   constructor(
     private readonly worldRef = world,
-    private readonly configManager: ConfigManager
+    private readonly challengeManager: ChallengeManager,
+    private readonly teamManager: TeamManager,
+    private readonly audioManager?: AudioManager,
+    private readonly hudManager?: HUDManager
   ) {
     this.registerProtection();
     this.loadLocationsFromProperties();
@@ -41,7 +48,16 @@ export class ChestManager {
   }
 
   monitorChests(): void {
-    // Monitoring loop will be implemented during challenge validation tasks.
+    if (this.monitorHandle !== undefined) return;
+    this.monitorHandle = system.runInterval(() => this.pollChests(), 10);
+  }
+
+  stopMonitoring(): void {
+    if (this.monitorHandle === undefined) return;
+    if (typeof system.clearRun === "function") {
+      system.clearRun(this.monitorHandle);
+    }
+    this.monitorHandle = undefined;
   }
 
   validateChestContents(team: TeamId): boolean {
@@ -50,7 +66,14 @@ export class ChestManager {
   }
 
   clearChest(team: TeamId): void {
-    void team;
+    const loc = this.getChestLocation(team);
+    if (!loc) return;
+    const dim = this.worldRef.getDimension("overworld");
+    const container = this.getContainerAt(dim, loc);
+    if (!container) return;
+    for (let i = 0; i < container.size; i++) {
+      container.setItem(i, undefined);
+    }
   }
 
   protectChest(location: Vector3): void {
@@ -66,6 +89,22 @@ export class ChestManager {
       if (this.isProtectedLocation(event.block.location)) {
         event.cancel = true;
         event.player.sendMessage("§cThis chest is protected!");
+      }
+    });
+
+    this.worldRef.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+      const loc = event.block.location;
+      const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, loc);
+      const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, loc);
+      if (!isCrimson && !isAzure) return;
+
+      const playerTeam = this.teamManager.getPlayerTeam(event.player);
+      const chestTeam: TeamId | undefined = isCrimson ? "crimson" : isAzure ? "azure" : undefined;
+      if (!playerTeam || !chestTeam) return;
+      if (playerTeam !== chestTeam) {
+        event.cancel = true;
+        event.player.sendMessage("§cYou cannot access the other team's chest!");
+        this.audioManager?.playAccessDenied([event.player]);
       }
     });
 
@@ -138,6 +177,59 @@ export class ChestManager {
       container?.container?.setCustomName?.(name);
     } catch {
       // Ignore placement errors (e.g., invalid location)
+    }
+  }
+
+  private pollChests(): void {
+    const active = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.gameActive);
+    if (!active) return;
+
+    const dim = this.worldRef.getDimension("overworld");
+    const challenges = this.challengeManager.getAvailableChallenges();
+    if (!challenges.length) return;
+
+    this.checkChestForTeam(dim, "crimson", challenges);
+    this.checkChestForTeam(dim, "azure", challenges);
+  }
+
+  private checkChestForTeam(dimension: Dimension, team: TeamId, challenges: ChallengeRecord[]): void {
+    const loc = this.getChestLocation(team);
+    if (!loc) return;
+    const container = this.getContainerAt(dimension, loc);
+    if (!container) return;
+
+    for (const challenge of challenges) {
+      if (this.challengeManager.validateDeposit(container, challenge)) {
+        this.handleChallengeCompletion(team, challenge, container);
+        break;
+      }
+    }
+  }
+
+  private handleChallengeCompletion(team: TeamId, challenge: ChallengeRecord, container: Container): void {
+    const completed = this.challengeManager.completeChallenge(challenge.id, team);
+    if (!completed) return;
+
+    this.teamManager.addPoints(team, challenge.points);
+    for (let i = 0; i < container.size; i++) {
+      container.setItem(i, undefined);
+    }
+
+    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§9Azure Architects";
+    this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
+
+    const players = this.worldRef.getAllPlayers();
+    this.audioManager?.playChallengeSounds(players);
+    players.forEach((p) => this.hudManager?.updateHUD(p));
+  }
+
+  private getContainerAt(dimension: Dimension, location: Vector3): Container | undefined {
+    try {
+      const block = dimension.getBlock(location);
+      const inventory = block?.getComponent("inventory") as { container?: Container } | undefined;
+      return inventory?.container;
+    } catch {
+      return undefined;
     }
   }
 }

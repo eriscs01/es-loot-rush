@@ -1,7 +1,9 @@
-import { world } from "@minecraft/server";
+import { Container, ItemStack, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { ANY_VARIANTS } from "../config/variants";
+import { TeamId } from "../types";
 
 export type ChallengeState = "available" | "completed" | "locked";
 
@@ -17,6 +19,7 @@ export interface ChallengeDefinition {
 
 export interface ChallengeRecord extends ChallengeDefinition {
   state: ChallengeState;
+  completedBy?: TeamId;
 }
 
 export class ChallengeManager {
@@ -74,6 +77,8 @@ export class ChallengeManager {
 
     this.activeChallenges = selections.map((c) => ({ ...c, state: "available" }));
     this.persistActive();
+    this.completedChallenges = [];
+    this.persistCompleted();
     return this.getActiveChallenges();
   }
 
@@ -84,6 +89,31 @@ export class ChallengeManager {
   lockChallenge(challengeId: string): void {
     this.activeChallenges = this.activeChallenges.map((c) => (c.id === challengeId ? { ...c, state: "locked" } : c));
     this.persistActive();
+  }
+
+  completeChallenge(challengeId: string, team: TeamId): ChallengeRecord | undefined {
+    let completed: ChallengeRecord | undefined;
+
+    if (!this.isChallengeAvailable(challengeId)) {
+      return undefined;
+    }
+
+    // Lock first to prevent concurrent completion attempts on the same challenge
+    this.lockChallenge(challengeId);
+
+    this.activeChallenges = this.activeChallenges.map((c) => {
+      if (c.id !== challengeId) return c;
+      completed = { ...c, state: "completed", completedBy: team };
+      return completed;
+    });
+
+    if (completed) {
+      this.persistActive();
+      this.completedChallenges = [...this.completedChallenges, completed];
+      this.persistCompleted();
+    }
+
+    return completed;
   }
 
   resetChallenges(): void {
@@ -113,6 +143,10 @@ export class ChallengeManager {
     return [...this.activeChallenges];
   }
 
+  getAvailableChallenges(): ChallengeRecord[] {
+    return this.getActiveChallenges().filter((c) => c.state === "available");
+  }
+
   getCompletedChallenges(): ChallengeRecord[] {
     const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.completedChallenges);
     if (typeof raw === "string") {
@@ -131,5 +165,37 @@ export class ChallengeManager {
     if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
       this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, payload);
     }
+  }
+
+  private persistCompleted(): void {
+    const payload = JSON.stringify(this.completedChallenges);
+    if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
+      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, payload);
+    }
+  }
+
+  validateDeposit(container: Container, challenge: ChallengeDefinition): boolean {
+    let total = 0;
+    for (let i = 0; i < container.size; i++) {
+      const item = container.getItem(i);
+      if (!item) continue;
+      if (this.matchesRequirement(item, challenge)) {
+        total += item.amount;
+      }
+      if (total >= challenge.count) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private matchesRequirement(item: ItemStack, challenge: ChallengeDefinition): boolean {
+    if (challenge.variant === "any") {
+      const allowed = ANY_VARIANTS[challenge.item];
+      if (allowed) {
+        return allowed.includes(item.typeId);
+      }
+    }
+    return item.typeId === challenge.item;
   }
 }

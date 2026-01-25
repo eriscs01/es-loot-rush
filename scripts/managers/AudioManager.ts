@@ -31,6 +31,10 @@ export class AudioManager {
     players.forEach((player) => this.playSound(player, "raid.horn"));
   }
 
+  playAccessDenied(players: Player[]): void {
+    players.forEach((player) => this.playSound(player, "note.bass"));
+  }
+
   private playSound(player: Player, soundId: string): void {
     try {
       player.playSound(soundId);

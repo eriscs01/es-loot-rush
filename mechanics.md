@@ -223,7 +223,7 @@ All commands require **GameDirectors** permission (Operator level 1+):
 ### **Easy Challenges (10-20 points)**
 
 - **Stone Age Stockpile**: 64 Cobblestone (10 pts)
-- **Lumberjack's Load**: 32 Oak Logs (12 pts)
+- **Lumberjack's Load**: 32 Logs (any wood) (12 pts)
 - **Farmer's Bounty**: 16 Bread (15 pts)
 - **Miner's First Strike**: 16 Coal (12 pts)
 - **Wool Gatherer**: 12 Wool (any color) (15 pts)
