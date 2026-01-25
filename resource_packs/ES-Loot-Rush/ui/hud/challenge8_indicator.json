@@ -1,16 +1,22 @@
 {
-  "namespace": "loot_rush_round_timer_indicator",
-  "round_timer_indicator": {
+  "namespace": "challenge8_indicator",
+
+  "challenge8_label": {
+    "$update_string": "update:eslr:challenge8:",
     "type": "label",
-    "$update_string": "update:lr:timer:",
     "text": "#text",
+    "anchor_from": "top_right",
+    "anchor_to": "top_right",
+    "offset": [-10, 100],
     "controls": [
       {
         "data_control": {
           "type": "panel",
           "size": [0, 0],
           "bindings": [
-            { "binding_name": "#hud_title_text_string" },
+            {
+              "binding_name": "#hud_title_text_string"
+            },
             {
               "binding_name": "#hud_title_text_string",
               "binding_name_override": "#preserved_text",

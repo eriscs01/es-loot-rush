@@ -6,7 +6,7 @@
         "array_name": "controls",
         "operation": "insert_front",
         "value": {
-          "loot_rush_panel@loot_rush_panel": {}
+          "eslr_hud_elements@eslr_hud_elements": {}
         }
       }
     ]
@@ -26,34 +26,25 @@
       }
     ]
   },
-  "loot_rush_panel": {
+  "eslr_hud_elements": {
     "type": "panel",
     "controls": [
-      { "loot_rush_left_stack@loot_rush_left_stack": {} },
-      { "loot_rush_right_stack@loot_rush_right_stack": {} }
-    ]
-  },
-  "loot_rush_left_stack": {
-    "type": "stack_panel",
-    "orientation": "vertical",
-    "anchor_from": "top_left",
-    "anchor_to": "top_left",
-    "offset": [10, 20],
-    "controls": [
-      { "round_indicator@loot_rush_round_indicator.round_indicator": {} },
-      { "round_timer_indicator@loot_rush_round_timer_indicator.round_timer_indicator": {} },
-      { "score_indicator@loot_rush_score_indicator.score_indicator": {} }
-    ]
-  },
-  "loot_rush_right_stack": {
-    "type": "stack_panel",
-    "orientation": "vertical",
-    "anchor_from": "top_right",
-    "anchor_to": "top_right",
-    "offset": [-10, 20],
-    "controls": [
-      { "challenge_header@loot_rush_challenge_header.challenge_header": {} },
-      { "challenge_list@loot_rush_challenge_list.challenge_list": {} }
+      { "round_grid@round_indicator.round_grid": {} },
+      { "timer_grid@timer_indicator.timer_grid": {} },
+      { "score_azure_grid@score_azure_indicator.score_azure_grid": {} },
+      { "score_crimson_grid@score_crimson_indicator.score_crimson_grid": {} },
+
+      { "challenge_header_label@challenge_header_indicator.challenge_header_label": {} },
+      { "challenge0_label@challenge0_indicator.challenge0_label": {} },
+      { "challenge1_label@challenge1_indicator.challenge1_label": {} },
+      { "challenge2_label@challenge2_indicator.challenge2_label": {} },
+      { "challenge3_label@challenge3_indicator.challenge3_label": {} },
+      { "challenge4_label@challenge4_indicator.challenge4_label": {} },
+      { "challenge5_label@challenge5_indicator.challenge5_label": {} },
+      { "challenge6_label@challenge6_indicator.challenge6_label": {} },
+      { "challenge7_label@challenge7_indicator.challenge7_label": {} },
+      { "challenge8_label@challenge8_indicator.challenge8_label": {} },
+      { "challenge9_label@challenge9_indicator.challenge9_label": {} }
     ]
   }
 }

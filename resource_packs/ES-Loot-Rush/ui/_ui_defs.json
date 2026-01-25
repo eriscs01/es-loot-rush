@@ -2,9 +2,19 @@
   "ui_defs": [
     "ui/hud_screen.json",
     "ui/hud/round_indicator.json",
-    "ui/hud/round_timer_indicator.json",
-    "ui/hud/score_indicator.json",
-    "ui/hud/challenge_header.json",
-    "ui/hud/challenge_list.json"
+    "ui/hud/timer_indicator.json",
+    "ui/hud/score_azure_indicator.json",
+    "ui/hud/score_crimson_indicator.json",
+    "ui/hud/challenge_header_indicator.json",
+    "ui/hud/challenge0_indicator.json",
+    "ui/hud/challenge1_indicator.json",
+    "ui/hud/challenge2_indicator.json",
+    "ui/hud/challenge3_indicator.json",
+    "ui/hud/challenge4_indicator.json",
+    "ui/hud/challenge5_indicator.json",
+    "ui/hud/challenge6_indicator.json",
+    "ui/hud/challenge7_indicator.json",
+    "ui/hud/challenge8_indicator.json",
+    "ui/hud/challenge9_indicator.json"
   ]
 }

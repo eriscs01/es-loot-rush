@@ -1,0 +1,44 @@
+{
+  "namespace": "challenge7_indicator",
+
+  "challenge7_label": {
+    "$update_string": "update:eslr:challenge7:",
+    "type": "label",
+    "text": "#text",
+    "anchor_from": "top_right",
+    "anchor_to": "top_right",
+    "offset": [-10, 90],
+    "controls": [
+      {
+        "data_control": {
+          "type": "panel",
+          "size": [0, 0],
+          "bindings": [
+            {
+              "binding_name": "#hud_title_text_string"
+            },
+            {
+              "binding_name": "#hud_title_text_string",
+              "binding_name_override": "#preserved_text",
+              "binding_condition": "visibility_changed"
+            },
+            {
+              "binding_type": "view",
+              "source_property_name": "(not (#hud_title_text_string = #preserved_text) and not ((#hud_title_text_string - $update_string) = #hud_title_text_string))",
+              "target_property_name": "#visible"
+            }
+          ]
+        }
+      }
+    ],
+    "bindings": [
+      {
+        "binding_type": "view",
+        "source_control_name": "data_control",
+        "resolve_sibling_scope": true,
+        "source_property_name": "('§z' + (#preserved_text - $update_string))",
+        "target_property_name": "#text"
+      }
+    ]
+  }
+}

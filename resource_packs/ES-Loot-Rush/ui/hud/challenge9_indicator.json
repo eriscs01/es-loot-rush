@@ -1,16 +1,22 @@
 {
-  "namespace": "loot_rush_challenge_header",
-  "challenge_header": {
+  "namespace": "challenge9_indicator",
+
+  "challenge9_label": {
+    "$update_string": "update:eslr:challenge9:",
     "type": "label",
-    "$update_string": "update:lr:challenges:header:",
     "text": "#text",
+    "anchor_from": "top_right",
+    "anchor_to": "top_right",
+    "offset": [-10, 110],
     "controls": [
       {
         "data_control": {
           "type": "panel",
           "size": [0, 0],
           "bindings": [
-            { "binding_name": "#hud_title_text_string" },
+            {
+              "binding_name": "#hud_title_text_string"
+            },
             {
               "binding_name": "#hud_title_text_string",
               "binding_name_override": "#preserved_text",

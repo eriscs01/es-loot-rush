@@ -17,7 +17,7 @@ export class HUDManager {
     if (!this.isGameActive()) return;
     const remainingTicks = this.getRemainingTicks();
     const formatted = this.formatTime(remainingTicks);
-    this.setTitle(player, `update:lr:timer:${formatted}`);
+    this.setTitle(player, `update:eslr:timer:Timer ${formatted}`);
     this.debugLogger?.log(`HUD timer update for ${player.nameTag}: ${formatted}`);
   }
 
@@ -27,12 +27,12 @@ export class HUDManager {
     this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
 
     // Header
-    this.setTitle(player, "update:lr:challenges:header:§6§lCHALLENGES");
+    this.setTitle(player, "update:eslr:challengeheader:§6§lCHALLENGES");
 
     for (let i = 0; i < 10; i++) {
       const challenge = challenges[i];
       if (!challenge) {
-        this.setTitle(player, `update:lr:challenge:${i}:`);
+        this.setTitle(player, `update:eslr:challenge${i}:`);
         continue;
       }
 
@@ -44,7 +44,7 @@ export class HUDManager {
       const ownerLabel = claimed && completedBy ? ` §7(${completedBy})` : " §7(Claimed)";
       const suffix = claimed ? ownerLabel : pointsLabel;
       const line = `${statusPrefix} ${challenge.name} ${suffix}`;
-      this.setTitle(player, `update:lr:challenge:${i}:${line}`);
+      this.setTitle(player, `update:eslr:challenge${i}:${line}`);
     }
   }
 
@@ -52,23 +52,23 @@ export class HUDManager {
     if (!this.isGameActive()) return;
     const crimson = this.teamManager?.getTeamScore("crimson") ?? 0;
     const azure = this.teamManager?.getTeamScore("azure") ?? 0;
-    const scores = `§cCrimson: ${crimson} §bAzure: ${azure}`;
-    this.setTitle(player, `update:lr:scores:${scores}`);
-    this.debugLogger?.log(`HUD score update for ${player.nameTag}: ${scores}`);
+    this.setTitle(player, `update:eslr:scorecrimson:§cCrimson Crusaders - ${crimson}`);
+    this.setTitle(player, `update:eslr:scoreazure:§bAzure Architects - ${azure}`);
+    this.debugLogger?.log(`HUD score update for ${player.nameTag}: Crimson ${crimson}, Azure ${azure}`);
   }
 
   updateRoundInfo(player: Player): void {
     if (!this.isGameActive()) return;
     const totalRounds = this.configManager?.getConfigValue("totalRounds") ?? 0;
     const currentRound = this.getCurrentRound();
-    this.setTitle(player, `update:lr:round:§6Round ${currentRound} of ${totalRounds}`);
+    this.setTitle(player, `update:eslr:round:§6Round ${currentRound} of ${totalRounds}`);
     this.debugLogger?.log(`HUD round update for ${player.nameTag}: ${currentRound}/${totalRounds}`);
   }
 
   setPaused(player: Player, paused: boolean): void {
     if (!this.isGameActive()) return;
     if (paused) {
-      this.setTitle(player, "update:lr:timer:§c§lPAUSED");
+      this.setTitle(player, "update:eslr:timer:Timer §c§lPAUSED");
       this.debugLogger?.log(`HUD paused for ${player.nameTag}`);
       return;
     }
@@ -76,11 +76,17 @@ export class HUDManager {
   }
 
   clearHUD(player: Player): void {
-    const prefixes = ["update:lr:round:", "update:lr:timer:", "update:lr:scores:", "update:lr:challenges:header:"];
+    const prefixes = [
+      "update:eslr:round:",
+      "update:eslr:timer:",
+      "update:eslr:scorecrimson:",
+      "update:eslr:scoreazure:",
+      "update:eslr:challenges:header:",
+    ];
 
     prefixes.forEach((prefix) => this.setTitle(player, prefix));
     for (let i = 0; i < 10; i++) {
-      this.setTitle(player, `update:lr:challenge:${i}:`);
+      this.setTitle(player, `update:eslr:challenge${i}:`);
     }
     this.debugLogger?.log(`HUD cleared for ${player.nameTag}`);
   }

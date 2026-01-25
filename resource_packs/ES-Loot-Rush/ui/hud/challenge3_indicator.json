@@ -1,16 +1,22 @@
 {
-  "namespace": "loot_rush_score_indicator",
-  "score_indicator": {
+  "namespace": "challenge3_indicator",
+
+  "challenge3_label": {
+    "$update_string": "update:eslr:challenge3:",
     "type": "label",
-    "$update_string": "update:lr:scores:",
     "text": "#text",
+    "anchor_from": "top_right",
+    "anchor_to": "top_right",
+    "offset": [-10, 50],
     "controls": [
       {
         "data_control": {
           "type": "panel",
           "size": [0, 0],
           "bindings": [
-            { "binding_name": "#hud_title_text_string" },
+            {
+              "binding_name": "#hud_title_text_string"
+            },
             {
               "binding_name": "#hud_title_text_string",
               "binding_name_override": "#preserved_text",

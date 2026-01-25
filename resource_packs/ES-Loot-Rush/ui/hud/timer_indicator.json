@@ -1,16 +1,16 @@
 {
-  "namespace": "round_indicator",
+  "namespace": "timer_indicator",
 
-  "round_grid": {
+  "timer_grid": {
     "type": "stack_panel",
     "orientation": "horizontal",
     "anchor_from": "top_left",
     "anchor_to": "top_left",
-    "offset": [10, 20],
+    "offset": [10, 30],
     "controls": [
       {
         "label": {
-          "$update_string": "update:eslr:round:",
+          "$update_string": "update:eslr:timer:",
           "type": "label",
           "text": "#text",
           "controls": [
