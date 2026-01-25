@@ -13,6 +13,7 @@ export class ChestManager {
   private spawnLocation: Vector3 | undefined;
   private monitorHandle?: number;
   private nameRefreshHandle?: number;
+  private didInit = false;
 
   constructor(
     private readonly worldRef = world,
@@ -23,8 +24,7 @@ export class ChestManager {
     private readonly debugLogger?: DebugLogger
   ) {
     this.registerProtection();
-    this.loadLocationsFromProperties();
-    this.startNameRefresh();
+    this.deferLoadLocations();
   }
 
   placeChests(centerLocation: Vector3, dimension?: Dimension): void {
@@ -39,7 +39,7 @@ export class ChestManager {
       this.placeChestBlock(dim, crimsonLoc, "§c§lCRIMSON BOUNTY", "west");
     }
     if (azureLoc) {
-      this.placeChestBlock(dim, azureLoc, "§9§lAZURE BOUNTY", "east");
+      this.placeChestBlock(dim, azureLoc, "§b§lAZURE BOUNTY", "east");
     }
 
     this.crimsonChestLocation = crimsonLoc;
@@ -107,6 +107,31 @@ export class ChestManager {
   reloadFromProperties(): void {
     this.loadLocationsFromProperties();
     this.startNameRefresh();
+  }
+
+  private deferLoadLocations(): void {
+    const anyWorld = this.worldRef as unknown as {
+      afterEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
+      beforeEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
+    };
+
+    const subscriber =
+      anyWorld.afterEvents?.worldInitialize?.subscribe ?? anyWorld.beforeEvents?.worldInitialize?.subscribe;
+
+    if (subscriber) {
+      subscriber(() => this.initializeLocations());
+    } else {
+      // Fallback if worldInitialize is unavailable
+      system.runTimeout(() => this.initializeLocations(), 0);
+    }
+  }
+
+  private initializeLocations(): void {
+    if (this.didInit) return;
+    this.didInit = true;
+    this.loadLocationsFromProperties();
+    this.startNameRefresh();
+    this.debugLogger?.log("ChestManager locations loaded after world initialize");
   }
 
   private registerProtection(): void {
@@ -256,7 +281,7 @@ export class ChestManager {
     const dim = this.worldRef.getDimension("overworld");
     const entries: Array<{ loc?: Vector3; label: string }> = [
       { loc: this.crimsonChestLocation, label: "§c§lCRIMSON BOUNTY" },
-      { loc: this.azureChestLocation, label: "§9§lAZURE BOUNTY" },
+      { loc: this.azureChestLocation, label: "§b§lAZURE BOUNTY" },
     ];
 
     entries.forEach(({ loc, label }) => {

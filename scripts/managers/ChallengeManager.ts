@@ -136,7 +136,7 @@ export class ChallengeManager {
     this.teamManager.addPoints(team, challenge.points);
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}`);
 
-    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§9Azure Architects";
+    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
     this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
 
     const players = this.worldRef.getAllPlayers();

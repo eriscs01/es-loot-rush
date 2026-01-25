@@ -20,6 +20,7 @@ export class GameStateManager {
   private warned30 = false;
   private lastSecondWarning?: number;
   private pauseEffectHandle?: number;
+  private initialized = false;
 
   constructor(
     private readonly configManager: ConfigManager,
@@ -35,6 +36,28 @@ export class GameStateManager {
   initialize(): void {
     this.registerDynamicProperties();
     this.registerPauseGuards();
+    this.deferInitialization();
+  }
+
+  private deferInitialization(): void {
+    const anyWorld = this.worldRef as unknown as {
+      afterEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
+      beforeEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
+    };
+
+    const subscriber =
+      anyWorld.afterEvents?.worldInitialize?.subscribe ?? anyWorld.beforeEvents?.worldInitialize?.subscribe;
+
+    if (subscriber) {
+      subscriber(() => this.finishInitialization());
+    } else {
+      system.runTimeout(() => this.finishInitialization(), 0);
+    }
+  }
+
+  private finishInitialization(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.configManager.loadConfig();
     this.teamManager.loadRostersFromProperties();
     this.ensureDefaults();
@@ -439,8 +462,10 @@ export class GameStateManager {
     const players = this.worldRef.getAllPlayers();
     players.forEach((p) => {
       try {
-        p.removeEffect("slowness");
-        p.removeEffect("mining_fatigue");
+        system.run(() => {
+          p.removeEffect("slowness");
+          p.removeEffect("mining_fatigue");
+        });
       } catch (err) {
         this.debugLogger?.warn("Failed to clear pause effects", p.nameTag, err);
       }
@@ -462,18 +487,20 @@ export class GameStateManager {
       subtitle = "§c§lCRIMSON WINS!";
       winnerLabel = "Crimson";
     } else if (azureScore > crimsonScore) {
-      subtitle = "§9§lAZURE WINS!";
+      subtitle = "§b§lAZURE WINS!";
       winnerLabel = "Azure";
     }
 
     const players = this.worldRef.getAllPlayers();
     players.forEach((p) => {
       try {
-        p.onScreenDisplay.setTitle("§6§lGAME OVER!", {
-          subtitle,
-          fadeInDuration: 0,
-          stayDuration: 100,
-          fadeOutDuration: 10,
+        system.run(() => {
+          p.onScreenDisplay.setTitle("§6§lGAME OVER!", {
+            subtitle,
+            fadeInDuration: 0,
+            stayDuration: 100,
+            fadeOutDuration: 10,
+          });
         });
       } catch (err) {
         this.debugLogger?.warn("Failed to show game over title", p.nameTag, err);
@@ -482,7 +509,7 @@ export class GameStateManager {
     });
 
     this.worldRef.sendMessage(
-      `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §9Azure: ${azureScore}. §eWinner: ${winnerLabel}`
+      `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §bAzure: ${azureScore}. §eWinner: ${winnerLabel}`
     );
     try {
       const dim = this.worldRef.getDimension("overworld");
@@ -490,7 +517,9 @@ export class GameStateManager {
       targets.forEach((teamId) => {
         const loc = this.chestManager.getChestLocation(teamId as "crimson" | "azure");
         if (loc) {
-          dim.spawnParticle("minecraft:firework_rocket", loc);
+          system.run(() => {
+            dim.spawnParticle("minecraft:firework_rocket", loc);
+          });
         }
       });
     } catch (err) {

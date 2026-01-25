@@ -34,14 +34,6 @@ export class CommandHandler {
   registerCommands(): void {
     system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       // Define valid enum values
-      customCommandRegistry.registerEnum("lr:teamid", ["crimson", "azure"]);
-      customCommandRegistry.registerEnum("lr:configkey", [
-        "easyChallengeCount",
-        "mediumChallengeCount",
-        "hardChallengeCount",
-        "totalRounds",
-        "roundDurationTicks",
-      ]);
 
       customCommandRegistry.registerCommand(
         {
@@ -50,7 +42,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleTeamUp(origin)
+        this.handleTeamUp.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -60,7 +52,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleStart(origin)
+        this.handleStart.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -70,7 +62,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleEnd(origin)
+        this.handleEnd.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -80,7 +72,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleReset(origin)
+        this.handleReset.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -91,8 +83,10 @@ export class CommandHandler {
           cheatsRequired: false,
           mandatoryParameters: [{ name: "round", type: CustomCommandParamType.Integer }],
         },
-        (origin, args) => this.handleForceRound(origin, args)
+        this.handleForceRound.bind(this)
       );
+
+      customCommandRegistry.registerEnum("lr:teamid", ["crimson", "azure"]);
 
       customCommandRegistry.registerCommand(
         {
@@ -105,7 +99,7 @@ export class CommandHandler {
             { name: "points", type: CustomCommandParamType.Integer },
           ],
         },
-        (origin, args) => this.handleSetScore(origin, args)
+        this.handleSetScore.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -115,7 +109,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handlePause(origin)
+        this.handlePause.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -125,7 +119,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleResume(origin)
+        this.handleResume.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -136,7 +130,7 @@ export class CommandHandler {
           cheatsRequired: false,
           mandatoryParameters: [{ name: "enabled", type: CustomCommandParamType.Boolean }],
         },
-        (origin, args) => this.handleDebugToggle(origin, args)
+        this.handleDebugToggle.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -146,12 +140,19 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleConfigView(origin)
+        this.handleConfigView.bind(this)
       );
 
+      customCommandRegistry.registerEnum("lr:configkey", [
+        "easyChallengeCount",
+        "mediumChallengeCount",
+        "hardChallengeCount",
+        "totalRounds",
+        "roundDurationTicks",
+      ]);
       customCommandRegistry.registerCommand(
         {
-          name: "lr:config:set",
+          name: "lr:configset",
           description: "Set a Loot Rush configuration value",
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
@@ -160,17 +161,17 @@ export class CommandHandler {
             { name: "value", type: CustomCommandParamType.Integer },
           ],
         },
-        (origin, args) => this.handleConfigSet(origin, args)
+        this.handleConfigSet.bind(this)
       );
 
       customCommandRegistry.registerCommand(
         {
-          name: "lr:config:reset",
+          name: "lr:configreset",
           description: "Reset Loot Rush configuration to defaults",
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleConfigReset(origin)
+        this.handleConfigReset.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -180,7 +181,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleBackup(origin)
+        this.handleBackup.bind(this)
       );
 
       customCommandRegistry.registerCommand(
@@ -190,7 +191,7 @@ export class CommandHandler {
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin) => this.handleRestore(origin)
+        this.handleRestore.bind(this)
       );
     });
   }
@@ -281,7 +282,7 @@ export class CommandHandler {
     const azureIds = this.teamManager.getRoster("azure");
     players.forEach((p) => {
       const isCrimson = crimsonIds.includes(p.nameTag ?? p.id);
-      const title = isCrimson ? "§c§lCRIMSON CRUSADERS" : "§9§lAZURE ARCHITECTS";
+      const title = isCrimson ? "§c§lCRIMSON CRUSADERS" : "§b§lAZURE ARCHITECTS";
       try {
         p.onScreenDisplay.setTitle(title, {
           fadeInDuration: 0,
@@ -309,21 +310,23 @@ export class CommandHandler {
     const azureRoster = azureList.join(", ") || "(none)";
     world.sendMessage(`§aTeams formed! Bounty chests placed!`);
     world.sendMessage(`§cCrimson Crusaders (${crimsonList.length}): §f${crimsonRoster}`);
-    world.sendMessage(`§9Azure Architects (${azureList.length}): §f${azureRoster}`);
+    world.sendMessage(`§bAzure Architects (${azureList.length}): §f${azureRoster}`);
   }
 
   private async playShuffleAnimation(players: Player[]): Promise<void> {
     const totalTicks = 200;
     const step = 10;
     for (let tick = 0; tick < totalTicks; tick += step) {
-      const teamText = Math.floor(tick / step) % 2 === 0 ? "§cCrimson Crusaders" : "§9Azure Architects";
+      const teamText = Math.floor(tick / step) % 2 === 0 ? "§cCrimson Crusaders" : "§bAzure Architects";
       players.forEach((p) => {
         try {
-          p.onScreenDisplay.setTitle("§6Your team is...", {
-            subtitle: teamText,
-            fadeInDuration: 0,
-            stayDuration: step,
-            fadeOutDuration: 0,
+          system.run(() => {
+            p.onScreenDisplay.setTitle("§6Your team is...", {
+              subtitle: teamText,
+              fadeInDuration: 0,
+              stayDuration: step,
+              fadeOutDuration: 0,
+            });
           });
         } catch (err) {
           this.debugLogger.warn("Failed to show shuffle title", p.nameTag, err);
@@ -352,13 +355,11 @@ export class CommandHandler {
     return { status: CustomCommandStatus.Success, message: "State reset. Use lr:teamup to form teams." };
   }
 
-  handleForceRound(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+  handleForceRound(origin: CustomCommandOrigin, round: number): CustomCommandResult {
     if (!this.gameStateManager.isGameActive()) {
       return { status: CustomCommandStatus.Failure, message: "§cGame must be active to force a round." };
     }
 
-    const roundArg = args?.[0];
-    const round = roundArg ? parseInt(roundArg, 10) : NaN;
     const totalRounds = this.configManager.getConfigValue("totalRounds");
 
     if (!Number.isInteger(round) || round < 1 || round > totalRounds) {
@@ -373,11 +374,9 @@ export class CommandHandler {
     return { status: CustomCommandStatus.Success, message: `Forced to round ${round}.` };
   }
 
-  handleSetScore(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
-    const teamArg = args?.[0]?.toLowerCase();
-    const pointsArg = args?.[1];
+  handleSetScore(origin: CustomCommandOrigin, teamArg: string, pointsArg: number): CustomCommandResult {
     const team = teamArg === "crimson" || teamArg === "azure" ? (teamArg as TeamId) : undefined;
-    const points = pointsArg ? parseInt(pointsArg, 10) : NaN;
+    const points = pointsArg ? pointsArg : NaN;
 
     if (!team) {
       return {
@@ -434,9 +433,7 @@ export class CommandHandler {
     };
   }
 
-  handleDebugToggle(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
-    const flagRaw = args?.[0];
-    const enabled = flagRaw === "true";
+  handleDebugToggle(origin: CustomCommandOrigin, enabled: boolean): CustomCommandResult {
     this.debugLogger.setEnabled(enabled);
     const statusText = enabled ? "enabled" : "disabled";
     this.debugLogger.log(`Debug command toggled: ${statusText}`);
@@ -462,7 +459,7 @@ export class CommandHandler {
     return { status: CustomCommandStatus.Success };
   }
 
-  handleConfigSet(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+  handleConfigSet(origin: CustomCommandOrigin, keyArg: string, value: number): CustomCommandResult {
     if (this.gameStateManager.isGameActive()) {
       return {
         status: CustomCommandStatus.Failure,
@@ -470,10 +467,9 @@ export class CommandHandler {
       };
     }
 
-    const key = args?.[0] as keyof ReturnType<ConfigManager["getConfig"]> | undefined;
-    const rawValue = args?.[1];
+    const key = keyArg as keyof ReturnType<ConfigManager["getConfig"]> | undefined;
 
-    if (!key || rawValue === undefined) {
+    if (!key || value === undefined) {
       return {
         status: CustomCommandStatus.Failure,
         message:
@@ -481,7 +477,6 @@ export class CommandHandler {
       };
     }
 
-    const value = parseInt(rawValue, 10);
     if (!Number.isInteger(value)) {
       return { status: CustomCommandStatus.Failure, message: "§cValue must be an integer." };
     }

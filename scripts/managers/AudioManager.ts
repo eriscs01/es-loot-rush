@@ -1,4 +1,4 @@
-import { Player, world } from "@minecraft/server";
+import { Player, system, world } from "@minecraft/server";
 import { DebugLogger } from "./DebugLogger";
 
 export class AudioManager {
@@ -68,7 +68,9 @@ export class AudioManager {
 
   private playSound(player: Player, soundId: string, pitch?: number): void {
     try {
-      player.playSound(soundId, typeof pitch === "number" ? { pitch } : undefined);
+      system.run(() => {
+        player.playSound(soundId, typeof pitch === "number" ? { pitch } : undefined);
+      });
     } catch (err) {
       this.debugLogger?.warn("Failed to play sound", soundId, player.nameTag, err);
     }

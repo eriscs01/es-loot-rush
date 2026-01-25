@@ -1,4 +1,4 @@
-import { Player, Vector3, world } from "@minecraft/server";
+import { Player, system, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { DebugLogger } from "./DebugLogger";
 import { TeamId } from "../types";
@@ -29,12 +29,18 @@ export class TeamManager {
       }
     };
 
-    this.worldRef.afterEvents.playerSpawn.subscribe(this.spawnHandler);
+    const spawnHandler = this.spawnHandler;
+    system.run(() => {
+      this.worldRef.afterEvents.playerSpawn.subscribe(spawnHandler);
+    });
   }
 
   unregisterJoinHandlers(): void {
     if (!this.spawnHandler) return;
-    this.worldRef.afterEvents.playerSpawn.unsubscribe(this.spawnHandler);
+    const spawnHandler = this.spawnHandler;
+    system.run(() => {
+      this.worldRef.afterEvents.playerSpawn.unsubscribe(spawnHandler);
+    });
     this.spawnHandler = undefined;
   }
 
@@ -87,7 +93,7 @@ export class TeamManager {
     const team = this.getPlayerTeam(player);
     if (!team) return;
 
-    const prefix = team === "crimson" ? "§c" : "§9";
+    const prefix = team === "crimson" ? "§c" : "§b";
     player.nameTag = `${prefix}${player.nameTag ?? player.id}`;
   }
 
@@ -181,7 +187,9 @@ export class TeamManager {
 
   resetPlayerNameTag(player: Player): void {
     try {
-      player.nameTag = player.name;
+      system.run(() => {
+        player.nameTag = player.name;
+      });
     } catch (err) {
       this.debugLogger?.warn("Failed to reset player name tag", player.nameTag, err);
     }

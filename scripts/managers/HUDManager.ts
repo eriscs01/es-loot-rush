@@ -38,7 +38,7 @@ export class HUDManager {
 
       const claimed = challenge.state === "completed";
       const completedBy =
-        challenge.completedBy === "crimson" ? "§cCrimson" : challenge.completedBy ? "§9Azure" : undefined;
+        challenge.completedBy === "crimson" ? "§cCrimson" : challenge.completedBy ? "bAzure" : undefined;
       const statusPrefix = claimed ? "§a✓" : "§f○";
       const pointsLabel = `§e(${challenge.points}pts)`;
       const ownerLabel = claimed && completedBy ? ` §7(${completedBy})` : " §7(Claimed)";
@@ -52,7 +52,7 @@ export class HUDManager {
     if (!this.isGameActive()) return;
     const crimson = this.teamManager?.getTeamScore("crimson") ?? 0;
     const azure = this.teamManager?.getTeamScore("azure") ?? 0;
-    const scores = `§cCrimson: ${crimson} §9Azure: ${azure}`;
+    const scores = `§cCrimson: ${crimson} §bAzure: ${azure}`;
     this.setTitle(player, `update:lr:scores:${scores}`);
     this.debugLogger?.log(`HUD score update for ${player.nameTag}: ${scores}`);
   }
@@ -87,7 +87,14 @@ export class HUDManager {
 
   private setTitle(player: Player, text: string): void {
     try {
-      player.onScreenDisplay.setTitle(text);
+      system.run(() => {
+        player.onScreenDisplay.setTitle(text, {
+          fadeInDuration: 0,
+          fadeOutDuration: 0,
+          stayDuration: 0,
+          subtitle: undefined,
+        });
+      });
     } catch (err) {
       this.debugLogger?.warn("Failed to set HUD title", player.nameTag, err);
     }
