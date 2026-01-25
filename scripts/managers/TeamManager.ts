@@ -14,10 +14,15 @@ export class TeamManager {
   ) {}
 
   formTeams(players: Player[]): void {
-    // Placeholder assignment; full logic will follow in team formation task.
-    const midpoint = Math.floor(players.length / 2);
-    const crimson = players.slice(0, midpoint);
-    const azure = players.slice(midpoint);
+    const shuffled = [...players];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const midpoint = Math.floor(shuffled.length / 2);
+    const crimson = shuffled.slice(0, midpoint);
+    const azure = shuffled.slice(midpoint);
 
     crimson.forEach((p) => this.assignPlayerToTeam(p, "crimson"));
     azure.forEach((p) => this.assignPlayerToTeam(p, "azure"));

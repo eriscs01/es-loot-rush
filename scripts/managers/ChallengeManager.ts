@@ -37,6 +37,7 @@ export class ChallengeManager {
 
   selectChallenges(): ChallengeRecord[] {
     const config = this.configManager.getConfig();
+    const maxSlots = 10;
     const pick = (pool: ChallengeDefinition[], count: number): ChallengeDefinition[] => {
       const shuffled = [...pool];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -46,11 +47,30 @@ export class ChallengeManager {
       return shuffled.slice(0, Math.max(0, Math.min(count, shuffled.length)));
     };
 
-    const selections: ChallengeDefinition[] = [
-      ...pick(CHALLENGES.easy, config.easyChallengeCount),
-      ...pick(CHALLENGES.medium, config.mediumChallengeCount),
-      ...pick(CHALLENGES.hard, config.hardChallengeCount),
+    const requested: ChallengeDefinition[] = [
+      ...pick(
+        this.challengePool.filter((c) => c.difficulty === "easy"),
+        config.easyChallengeCount
+      ),
+      ...pick(
+        this.challengePool.filter((c) => c.difficulty === "medium"),
+        config.mediumChallengeCount
+      ),
+      ...pick(
+        this.challengePool.filter((c) => c.difficulty === "hard"),
+        config.hardChallengeCount
+      ),
     ];
+
+    const uniqueById = new Map<string, ChallengeDefinition>();
+    for (const candidate of requested) {
+      if (uniqueById.size >= maxSlots) break;
+      if (!uniqueById.has(candidate.id)) {
+        uniqueById.set(candidate.id, candidate);
+      }
+    }
+
+    const selections = Array.from(uniqueById.values());
 
     this.activeChallenges = selections.map((c) => ({ ...c, state: "available" }));
     this.persistActive();

@@ -7,6 +7,14 @@ export class AudioManager {
     players.forEach((player) => this.playSound(player, "note.pling"));
   }
 
+  playTeamShuffleTick(players: Player[]): void {
+    players.forEach((player) => this.playSound(player, "random.click"));
+  }
+
+  playTeamReveal(players: Player[]): void {
+    players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
+  }
+
   playChallengeSounds(players: Player[]): void {
     players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
   }
@@ -17,6 +25,10 @@ export class AudioManager {
 
   playVictorySounds(players: Player[]): void {
     players.forEach((player) => this.playSound(player, "random.levelup"));
+  }
+
+  playStartHorn(players: Player[]): void {
+    players.forEach((player) => this.playSound(player, "raid.horn"));
   }
 
   private playSound(player: Player, soundId: string): void {

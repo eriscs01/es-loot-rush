@@ -1,4 +1,4 @@
-import { Dimension, Vector3, world } from "@minecraft/server";
+import { BlockPermutation, Dimension, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
@@ -18,14 +18,21 @@ export class ChestManager {
 
   placeChests(centerLocation: Vector3, dimension?: Dimension): void {
     this.spawnLocation = centerLocation;
-    // Chest placement will be handled in Task 1.4.
-    this.crimsonChestLocation = centerLocation
+    const dim = dimension ?? this.worldRef.getDimension("overworld");
+    const crimsonLoc = centerLocation
       ? { x: centerLocation.x - 3, y: centerLocation.y, z: centerLocation.z }
       : undefined;
-    this.azureChestLocation = centerLocation
-      ? { x: centerLocation.x + 3, y: centerLocation.y, z: centerLocation.z }
-      : undefined;
-    void dimension;
+    const azureLoc = centerLocation ? { x: centerLocation.x + 3, y: centerLocation.y, z: centerLocation.z } : undefined;
+
+    if (crimsonLoc) {
+      this.placeChestBlock(dim, crimsonLoc, "§c§lCRIMSON BOUNTY", "west");
+    }
+    if (azureLoc) {
+      this.placeChestBlock(dim, azureLoc, "§9§lAZURE BOUNTY", "east");
+    }
+
+    this.crimsonChestLocation = crimsonLoc;
+    this.azureChestLocation = azureLoc;
     this.persistLocations();
   }
 
@@ -115,6 +122,22 @@ export class ChestManager {
       return undefined;
     } catch {
       return undefined;
+    }
+  }
+
+  private placeChestBlock(dimension: Dimension, location: Vector3, name: string, facing: "east" | "west"): void {
+    try {
+      const block = dimension.getBlock(location);
+      if (!block) return;
+      block.setType("minecraft:chest");
+      const permutation = block.permutation.withState("minecraft:cardinal_direction", facing);
+      block.setPermutation(permutation as BlockPermutation);
+      const container = block.getComponent("inventory") as
+        | { container?: { setCustomName: (label: string) => void } }
+        | undefined;
+      container?.container?.setCustomName?.(name);
+    } catch {
+      // Ignore placement errors (e.g., invalid location)
     }
   }
 }

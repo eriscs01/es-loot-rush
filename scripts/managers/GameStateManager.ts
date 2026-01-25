@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server";
+import { Player, system, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { TeamManager } from "./TeamManager";
 import { ChallengeManager } from "./ChallengeManager";
@@ -13,6 +13,7 @@ export class GameStateManager {
   private gamePaused = false;
   private currentRound = 1;
   private roundStartTick = 0;
+  private roundTimerHandle?: number;
 
   constructor(
     private readonly configManager: ConfigManager,
@@ -45,12 +46,17 @@ export class GameStateManager {
     this.persistRoundState();
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
+    this.startRoundTimer();
   }
 
-  endGame(): void {
+  endGame(announceWinner = false): void {
     this.setBooleanProperty(DYNAMIC_KEYS.gameActive, false);
     this.gameActive = false;
     this.gamePaused = false;
+    this.stopRoundTimer();
+    if (announceWinner) {
+      this.announceWinner();
+    }
   }
 
   pauseGame(): void {
@@ -73,13 +79,22 @@ export class GameStateManager {
 
   transitionToNextRound(): void {
     const totalRounds = this.configManager.getConfigValue("totalRounds");
-    if (this.currentRound < totalRounds) {
-      this.currentRound += 1;
-      this.roundStartTick = system.currentTick;
-      this.persistRoundState();
-    } else {
-      this.endGame();
+    if (this.currentRound >= totalRounds) {
+      this.endGame(true);
+      return;
     }
+
+    this.currentRound += 1;
+    this.roundStartTick = system.currentTick;
+    this.persistRoundState();
+
+    this.challengeManager.resetChallenges();
+    this.challengeManager.selectChallenges();
+
+    const players = this.worldRef.getAllPlayers();
+    this.worldRef.sendMessage(`§6[LOOT RUSH] §fRound ${this.currentRound} begins!`);
+    players.forEach((p) => this.hudManager.updateHUD(p));
+    this.audioManager?.playStartHorn(players);
   }
 
   forceRound(roundNumber: number): void {
@@ -103,6 +118,11 @@ export class GameStateManager {
 
   setTeamsFormed(flag: boolean): void {
     this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, flag);
+  }
+
+  isTeamsFormed(): boolean {
+    const stored = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.teamsFormed);
+    return typeof stored === "boolean" ? stored : false;
   }
 
   private registerDynamicProperties(): void {
@@ -155,6 +175,66 @@ export class GameStateManager {
   private persistRoundState(): void {
     this.setNumberProperty(DYNAMIC_KEYS.currentRound, this.currentRound);
     this.setNumberProperty(DYNAMIC_KEYS.roundStartTick, this.roundStartTick);
+  }
+
+  private startRoundTimer(): void {
+    if (typeof system.runInterval !== "function") return;
+    if (this.roundTimerHandle !== undefined && typeof system.clearRun === "function") {
+      system.clearRun(this.roundTimerHandle);
+    }
+    // Check once per second (20 ticks) to minimize overhead.
+    this.roundTimerHandle = system.runInterval(() => this.handleRoundTick(), 20);
+  }
+
+  private stopRoundTimer(): void {
+    if (this.roundTimerHandle === undefined) return;
+    if (typeof system.clearRun === "function") {
+      system.clearRun(this.roundTimerHandle);
+    }
+    this.roundTimerHandle = undefined;
+  }
+
+  private handleRoundTick(): void {
+    if (!this.isGameActive() || this.gamePaused) return;
+    const remaining = this.getRemainingTime();
+    if (remaining === 0) {
+      this.transitionToNextRound();
+    }
+  }
+
+  private announceWinner(): void {
+    const crimsonScore = this.teamManager.getTeamScore("crimson");
+    const azureScore = this.teamManager.getTeamScore("azure");
+    let subtitle = "§e§lTIE GAME!";
+    let winnerLabel = "Tie";
+
+    if (crimsonScore > azureScore) {
+      subtitle = "§c§lCRIMSON WINS!";
+      winnerLabel = "Crimson";
+    } else if (azureScore > crimsonScore) {
+      subtitle = "§9§lAZURE WINS!";
+      winnerLabel = "Azure";
+    }
+
+    const players = this.worldRef.getAllPlayers();
+    players.forEach((p) => {
+      try {
+        p.onScreenDisplay.setTitle("§6§lGAME OVER!", {
+          subtitle,
+          fadeInDuration: 0,
+          stayDuration: 100,
+          fadeOutDuration: 10,
+        });
+      } catch {
+        /* ignore title failures */
+      }
+      this.hudManager.clearHUD(p);
+    });
+
+    this.worldRef.sendMessage(
+      `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §9Azure: ${azureScore}. §eWinner: ${winnerLabel}`
+    );
+    this.audioManager?.playVictorySounds(players);
   }
 
   private setBooleanProperty(key: string, value: boolean): void {
