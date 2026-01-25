@@ -1,15 +1,15 @@
 {
   "format_version": 2,
   "header": {
-    "name": "ES-Loot-Rush",
-    "description": "ES-Loot-Rush",
+    "name": "Loot Rush - Resource Pack",
+    "description": "Custom HUD and visual resources for the Loot Rush competitive challenge game. Displays team scores, round timers, active challenges, and color-coded team indicators.",
     "uuid": "d30e492f-c1e0-452b-9129-d08bfa1063b1",
     "version": [1, 0, 0],
     "min_engine_version": [1, 21, 130]
   },
   "modules": [
     {
-      "description": "My Resource Pack",
+      "description": "HUD and visual resources for Loot Rush",
       "type": "resources",
       "uuid": "515bcdef-aeef-44b7-b0cd-3e8de3efbfe6",
       "version": [1, 0, 0]
