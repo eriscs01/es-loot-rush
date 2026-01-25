@@ -1,0 +1,10 @@
+{
+  "ui_defs": [
+    "ui/hud_screen.json",
+    "ui/hud/round_indicator.json",
+    "ui/hud/round_timer_indicator.json",
+    "ui/hud/score_indicator.json",
+    "ui/hud/challenge_header.json",
+    "ui/hud/challenge_list.json"
+  ]
+}

@@ -125,6 +125,12 @@ export class CommandHandler {
     this.gameStateManager.startGame();
     const active = this.challengeManager.selectChallenges();
     const players = world.getAllPlayers();
+    players.forEach((p) => {
+      this.hudManager.updateRoundInfo(p);
+      this.hudManager.updateTimer(p);
+      this.hudManager.updateScores(p);
+      this.hudManager.updateChallenges(p);
+    });
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
     world.sendMessage(`Round 1 with ${active.length} challenges. Duration: ${durationInMins} minutes.`);

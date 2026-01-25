@@ -1,0 +1,59 @@
+{
+  "namespace": "hud",
+  "root_panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_front",
+        "value": {
+          "loot_rush_panel@loot_rush_panel": {}
+        }
+      }
+    ]
+  },
+  "hud_title_text/title_frame/title": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_property_name": "((#text - 'update') = #text)",
+            "target_property_name": "#visible"
+          }
+        ]
+      }
+    ]
+  },
+  "loot_rush_panel": {
+    "type": "panel",
+    "controls": [
+      { "loot_rush_left_stack@loot_rush_left_stack": {} },
+      { "loot_rush_right_stack@loot_rush_right_stack": {} }
+    ]
+  },
+  "loot_rush_left_stack": {
+    "type": "stack_panel",
+    "orientation": "vertical",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [10, 20],
+    "controls": [
+      { "round_indicator@loot_rush_round_indicator.round_indicator": {} },
+      { "round_timer_indicator@loot_rush_round_timer_indicator.round_timer_indicator": {} },
+      { "score_indicator@loot_rush_score_indicator.score_indicator": {} }
+    ]
+  },
+  "loot_rush_right_stack": {
+    "type": "stack_panel",
+    "orientation": "vertical",
+    "anchor_from": "top_right",
+    "anchor_to": "top_right",
+    "offset": [-10, 20],
+    "controls": [
+      { "challenge_header@loot_rush_challenge_header.challenge_header": {} },
+      { "challenge_list@loot_rush_challenge_list.challenge_list": {} }
+    ]
+  }
+}

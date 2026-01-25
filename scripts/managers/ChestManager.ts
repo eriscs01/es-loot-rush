@@ -220,7 +220,10 @@ export class ChestManager {
 
     const players = this.worldRef.getAllPlayers();
     this.audioManager?.playChallengeSounds(players);
-    players.forEach((p) => this.hudManager?.updateHUD(p));
+    players.forEach((p) => {
+      this.hudManager?.updateScores(p);
+      this.hudManager?.updateChallenges(p);
+    });
   }
 
   private getContainerAt(dimension: Dimension, location: Vector3): Container | undefined {

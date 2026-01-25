@@ -14,6 +14,9 @@ export class GameStateManager {
   private currentRound = 1;
   private roundStartTick = 0;
   private roundTimerHandle?: number;
+  private warned60 = false;
+  private warned30 = false;
+  private lastSecondWarning?: number;
 
   constructor(
     private readonly configManager: ConfigManager,
@@ -43,10 +46,12 @@ export class GameStateManager {
     this.gamePaused = false;
     this.currentRound = 1;
     this.roundStartTick = system.currentTick;
+    this.resetTimerWarnings();
     this.persistRoundState();
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
     this.startRoundTimer();
+    this.updateAllTimers();
     this.chestManager.monitorChests();
   }
 
@@ -88,6 +93,7 @@ export class GameStateManager {
 
     this.currentRound += 1;
     this.roundStartTick = system.currentTick;
+    this.resetTimerWarnings();
     this.persistRoundState();
 
     this.challengeManager.resetChallenges();
@@ -95,7 +101,11 @@ export class GameStateManager {
 
     const players = this.worldRef.getAllPlayers();
     this.worldRef.sendMessage(`§6[LOOT RUSH] §fRound ${this.currentRound} begins!`);
-    players.forEach((p) => this.hudManager.updateHUD(p));
+    players.forEach((p) => {
+      this.hudManager.updateRoundInfo(p);
+      this.hudManager.updateTimer(p);
+      this.hudManager.updateChallenges(p);
+    });
     this.audioManager?.playStartHorn(players);
   }
 
@@ -199,9 +209,48 @@ export class GameStateManager {
   private handleRoundTick(): void {
     if (!this.isGameActive() || this.gamePaused) return;
     const remaining = this.getRemainingTime();
+    this.handleTimerWarnings(remaining);
     if (remaining === 0) {
       this.transitionToNextRound();
     }
+    this.updateAllTimers();
+  }
+
+  private handleTimerWarnings(remainingTicks: number): void {
+    const remainingSeconds = Math.ceil(Math.max(remainingTicks, 0) / 20);
+    const players = this.worldRef.getAllPlayers();
+
+    // Every second at 10s and below
+    if (remainingSeconds <= 10) {
+      if (this.lastSecondWarning !== remainingSeconds) {
+        this.audioManager?.playTimerWarning10(players);
+        this.lastSecondWarning = remainingSeconds;
+      }
+      return;
+    }
+
+    // One-time 30s warning (higher pitch)
+    if (!this.warned30 && remainingSeconds <= 30) {
+      this.audioManager?.playTimerWarning30(players);
+      this.warned30 = true;
+    }
+
+    // One-time 60s warning
+    if (!this.warned60 && remainingSeconds <= 60) {
+      this.audioManager?.playTimerWarning60(players);
+      this.warned60 = true;
+    }
+  }
+
+  private resetTimerWarnings(): void {
+    this.warned60 = false;
+    this.warned30 = false;
+    this.lastSecondWarning = undefined;
+  }
+
+  private updateAllTimers(): void {
+    const players = this.worldRef.getAllPlayers();
+    players.forEach((p) => this.hudManager.updateTimer(p));
   }
 
   private announceWinner(): void {
