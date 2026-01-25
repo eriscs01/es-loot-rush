@@ -5,6 +5,7 @@ import { ChallengeManager } from "./ChallengeManager";
 import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
+import { DebugLogger } from "./DebugLogger";
 import { GameConfig } from "../types";
 import { DYNAMIC_KEYS } from "../config/constants";
 
@@ -13,10 +14,12 @@ export class GameStateManager {
   private gamePaused = false;
   private currentRound = 1;
   private roundStartTick = 0;
+  private pausedAtTick = 0;
   private roundTimerHandle?: number;
   private warned60 = false;
   private warned30 = false;
   private lastSecondWarning?: number;
+  private pauseEffectHandle?: number;
 
   constructor(
     private readonly configManager: ConfigManager,
@@ -25,27 +28,35 @@ export class GameStateManager {
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
     private readonly audioManager?: AudioManager,
+    private readonly debugLogger?: DebugLogger,
     private readonly worldRef = world
   ) {}
 
   initialize(): void {
     this.registerDynamicProperties();
+    this.registerPauseGuards();
     this.configManager.loadConfig();
     this.teamManager.loadRostersFromProperties();
     this.ensureDefaults();
+    this.gameActive = this.getBooleanProperty(DYNAMIC_KEYS.gameActive, false);
+    this.gamePaused = this.getBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
     this.currentRound = this.getNumberProperty(DYNAMIC_KEYS.currentRound, 1);
     this.roundStartTick = this.getNumberProperty(DYNAMIC_KEYS.roundStartTick, system.currentTick);
+    this.pausedAtTick = this.getNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
   }
 
   startGame(): void {
     this.setBooleanProperty(DYNAMIC_KEYS.gameActive, true);
     this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, true);
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
     this.setNumberProperty(DYNAMIC_KEYS.crimsonScore, 0);
     this.setNumberProperty(DYNAMIC_KEYS.azureScore, 0);
     this.gameActive = true;
     this.gamePaused = false;
     this.currentRound = 1;
     this.roundStartTick = system.currentTick;
+    this.pausedAtTick = 0;
     this.resetTimerWarnings();
     this.persistRoundState();
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
@@ -53,25 +64,82 @@ export class GameStateManager {
     this.startRoundTimer();
     this.updateAllTimers();
     this.chestManager.monitorChests();
+    this.teamManager.registerJoinHandlers();
+    this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
   }
 
   endGame(announceWinner = false): void {
     this.setBooleanProperty(DYNAMIC_KEYS.gameActive, false);
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
     this.gameActive = false;
     this.gamePaused = false;
+    this.pausedAtTick = 0;
+    this.clearPauseEffects();
+    this.updatePauseHUD(false);
     this.stopRoundTimer();
     this.chestManager.stopMonitoring();
+    this.teamManager.unregisterJoinHandlers();
+    this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
       this.announceWinner();
     }
   }
 
+  resetGame(): void {
+    this.endGame(false);
+    this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, false);
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
+    this.currentRound = 0;
+    this.roundStartTick = system.currentTick;
+    this.setNumberProperty(DYNAMIC_KEYS.currentRound, this.currentRound);
+    this.setNumberProperty(DYNAMIC_KEYS.roundStartTick, this.roundStartTick);
+    this.setNumberProperty(DYNAMIC_KEYS.crimsonScore, 0);
+    this.setNumberProperty(DYNAMIC_KEYS.azureScore, 0);
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
+    this.resetTimerWarnings();
+
+    this.challengeManager.resetChallenges();
+    this.teamManager.clearTeams();
+    this.chestManager.clearChestReferences();
+
+    const players = this.worldRef.getAllPlayers();
+    players.forEach((p) => {
+      this.hudManager.clearHUD(p);
+      this.teamManager.resetPlayerNameTag(p);
+    });
+
+    this.debugLogger?.log("Game state fully reset");
+    this.worldRef.sendMessage("§6[LOOT RUSH] §fState reset. Run lr:teamup to form teams.");
+  }
+
   pauseGame(): void {
+    if (this.gamePaused) return;
     this.gamePaused = true;
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, true);
+    this.pausedAtTick = system.currentTick;
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, this.pausedAtTick);
+    this.applyPauseEffects();
+    this.updatePauseHUD(true);
+    this.debugLogger?.log(`Game paused at tick ${this.pausedAtTick}`);
   }
 
   resumeGame(): void {
+    if (!this.gamePaused) return;
     this.gamePaused = false;
+    if (this.pausedAtTick) {
+      const pauseDuration = system.currentTick - this.pausedAtTick;
+      this.roundStartTick += pauseDuration;
+      this.persistRoundState();
+    }
+    this.pausedAtTick = 0;
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
+    this.clearPauseEffects();
+    this.updatePauseHUD(false);
+    this.debugLogger?.log(`Game resumed; roundStartTick adjusted to ${this.roundStartTick}`);
   }
 
   getCurrentRound(): number {
@@ -79,7 +147,8 @@ export class GameStateManager {
   }
 
   getRemainingTime(): number {
-    const elapsed = system.currentTick - this.roundStartTick;
+    const effectiveTick = this.gamePaused && this.pausedAtTick ? this.pausedAtTick : system.currentTick;
+    const elapsed = effectiveTick - this.roundStartTick;
     const roundDuration = this.configManager.getConfigValue("roundDurationTicks");
     return Math.max(roundDuration - elapsed, 0);
   }
@@ -93,8 +162,12 @@ export class GameStateManager {
 
     this.currentRound += 1;
     this.roundStartTick = system.currentTick;
+    this.pausedAtTick = 0;
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
     this.resetTimerWarnings();
     this.persistRoundState();
+    this.debugLogger?.log(`Transitioning to round ${this.currentRound}`);
 
     this.challengeManager.resetChallenges();
     this.challengeManager.selectChallenges();
@@ -110,9 +183,8 @@ export class GameStateManager {
   }
 
   forceRound(roundNumber: number): void {
-    this.currentRound = roundNumber;
-    this.roundStartTick = system.currentTick;
-    this.persistRoundState();
+    this.currentRound = roundNumber - 1;
+    this.transitionToNextRound();
   }
 
   getGameConfig(): GameConfig {
@@ -150,9 +222,12 @@ export class GameStateManager {
       const { propertyRegistry } = event ?? {};
       if (!propertyRegistry) return;
       propertyRegistry.registerBoolean(DYNAMIC_KEYS.gameActive);
+      propertyRegistry.registerBoolean(DYNAMIC_KEYS.gamePaused);
+      propertyRegistry.registerBoolean(DYNAMIC_KEYS.debugMode);
       propertyRegistry.registerBoolean(DYNAMIC_KEYS.teamsFormed);
       propertyRegistry.registerNumber(DYNAMIC_KEYS.currentRound);
       propertyRegistry.registerNumber(DYNAMIC_KEYS.roundStartTick);
+      propertyRegistry.registerNumber(DYNAMIC_KEYS.pausedAtTick);
       propertyRegistry.registerNumber(DYNAMIC_KEYS.crimsonScore);
       propertyRegistry.registerNumber(DYNAMIC_KEYS.azureScore);
       propertyRegistry.registerString(DYNAMIC_KEYS.activeChallenges, 16000);
@@ -166,14 +241,50 @@ export class GameStateManager {
     });
   }
 
+  private registerPauseGuards(): void {
+    // Cancel block interactions while paused
+    this.worldRef.beforeEvents.playerBreakBlock.subscribe((event) => {
+      if (this.gamePaused && this.isGameActive()) {
+        event.cancel = true;
+      }
+    });
+
+    (this.worldRef.beforeEvents as any).playerPlaceBlock?.subscribe((event: any) => {
+      if (this.gamePaused && this.isGameActive()) {
+        event.cancel = true;
+      }
+    });
+
+    this.worldRef.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+      if (this.gamePaused && this.isGameActive()) {
+        event.cancel = true;
+      }
+    });
+
+    this.worldRef.beforeEvents.itemUse.subscribe((event) => {
+      if (this.gamePaused && this.isGameActive()) {
+        event.cancel = true;
+      }
+    });
+
+    (this.worldRef.beforeEvents as any).itemUseOn?.subscribe((event: any) => {
+      if (this.gamePaused && this.isGameActive()) {
+        event.cancel = true;
+      }
+    });
+  }
+
   private ensureDefaults(): void {
     this.setBooleanProperty(DYNAMIC_KEYS.gameActive, this.getBooleanProperty(DYNAMIC_KEYS.gameActive, false));
+    this.setBooleanProperty(DYNAMIC_KEYS.gamePaused, this.getBooleanProperty(DYNAMIC_KEYS.gamePaused, false));
+    this.setBooleanProperty(DYNAMIC_KEYS.debugMode, this.getBooleanProperty(DYNAMIC_KEYS.debugMode, false));
     this.setBooleanProperty(DYNAMIC_KEYS.teamsFormed, this.getBooleanProperty(DYNAMIC_KEYS.teamsFormed, false));
     this.setNumberProperty(DYNAMIC_KEYS.currentRound, this.getNumberProperty(DYNAMIC_KEYS.currentRound, 1));
     this.setNumberProperty(
       DYNAMIC_KEYS.roundStartTick,
       this.getNumberProperty(DYNAMIC_KEYS.roundStartTick, system.currentTick)
     );
+    this.setNumberProperty(DYNAMIC_KEYS.pausedAtTick, this.getNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0));
     this.setNumberProperty(DYNAMIC_KEYS.crimsonScore, this.getNumberProperty(DYNAMIC_KEYS.crimsonScore, 0));
     this.setNumberProperty(DYNAMIC_KEYS.azureScore, this.getNumberProperty(DYNAMIC_KEYS.azureScore, 0));
     if (typeof this.worldRef.getDynamicProperty(DYNAMIC_KEYS.activeChallenges) !== "string") {
@@ -253,6 +364,46 @@ export class GameStateManager {
     players.forEach((p) => this.hudManager.updateTimer(p));
   }
 
+  private applyPauseEffects(): void {
+    if (this.pauseEffectHandle !== undefined && typeof system.clearRun === "function") {
+      system.clearRun(this.pauseEffectHandle);
+    }
+
+    this.pauseEffectHandle = system.runInterval(() => {
+      const players = this.worldRef.getAllPlayers();
+      players.forEach((p) => {
+        try {
+          p.addEffect("slowness", 40, { amplifier: 255, showParticles: false });
+          p.addEffect("mining_fatigue", 40, { amplifier: 255, showParticles: false });
+        } catch (err) {
+          this.debugLogger?.warn("Failed to apply pause effects", p.nameTag, err);
+        }
+      });
+    }, 20);
+  }
+
+  private clearPauseEffects(): void {
+    if (this.pauseEffectHandle !== undefined && typeof system.clearRun === "function") {
+      system.clearRun(this.pauseEffectHandle);
+    }
+    this.pauseEffectHandle = undefined;
+
+    const players = this.worldRef.getAllPlayers();
+    players.forEach((p) => {
+      try {
+        p.removeEffect("slowness");
+        p.removeEffect("mining_fatigue");
+      } catch (err) {
+        this.debugLogger?.warn("Failed to clear pause effects", p.nameTag, err);
+      }
+    });
+  }
+
+  private updatePauseHUD(paused: boolean): void {
+    const players = this.worldRef.getAllPlayers();
+    players.forEach((p) => this.hudManager.setPaused(p, paused));
+  }
+
   private announceWinner(): void {
     const crimsonScore = this.teamManager.getTeamScore("crimson");
     const azureScore = this.teamManager.getTeamScore("azure");
@@ -276,8 +427,8 @@ export class GameStateManager {
           stayDuration: 100,
           fadeOutDuration: 10,
         });
-      } catch {
-        /* ignore title failures */
+      } catch (err) {
+        this.debugLogger?.warn("Failed to show game over title", p.nameTag, err);
       }
       this.hudManager.clearHUD(p);
     });

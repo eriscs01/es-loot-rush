@@ -1,7 +1,11 @@
 import { Player, world } from "@minecraft/server";
+import { DebugLogger } from "./DebugLogger";
 
 export class AudioManager {
-  constructor(private readonly worldRef = world) {}
+  constructor(
+    private readonly worldRef = world,
+    private readonly debugLogger?: DebugLogger
+  ) {}
 
   private readonly timerWarningSounds: {
     at60: { soundId: string; pitch?: number };
@@ -59,8 +63,8 @@ export class AudioManager {
   private playSound(player: Player, soundId: string, pitch?: number): void {
     try {
       player.playSound(soundId, typeof pitch === "number" ? { pitch } : undefined);
-    } catch {
-      // Sound playback is not critical for initial scaffolding.
+    } catch (err) {
+      this.debugLogger?.warn("Failed to play sound", soundId, player.nameTag, err);
     }
     void this.worldRef;
   }

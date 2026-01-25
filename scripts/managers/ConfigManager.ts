@@ -1,6 +1,7 @@
 import { world } from "@minecraft/server";
 import { GameConfig } from "../types";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { DebugLogger } from "./DebugLogger";
 
 const DEFAULT_CONFIG: GameConfig = {
   easyChallengeCount: 3,
@@ -13,7 +14,10 @@ const DEFAULT_CONFIG: GameConfig = {
 export class ConfigManager {
   private config: GameConfig;
 
-  constructor(private readonly worldRef = world) {
+  constructor(
+    private readonly worldRef = world,
+    private readonly debugLogger?: DebugLogger
+  ) {
     this.config = { ...DEFAULT_CONFIG };
   }
 
@@ -27,7 +31,8 @@ export class ConfigManager {
     try {
       const parsed = JSON.parse(raw) as GameConfig;
       this.config = this.validateConfig(parsed) ? parsed : { ...DEFAULT_CONFIG };
-    } catch {
+    } catch (err) {
+      this.debugLogger?.warn("Failed to parse config; resetting to defaults", err);
       this.resetToDefaults();
     }
   }
@@ -38,8 +43,8 @@ export class ConfigManager {
       if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
         this.worldRef.setDynamicProperty(DYNAMIC_KEYS.config, payload);
       }
-    } catch {
-      // Dynamic properties not yet initialized; ignore for now.
+    } catch (err) {
+      this.debugLogger?.warn("Failed to save config", err);
     }
   }
 

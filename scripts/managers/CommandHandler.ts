@@ -1,5 +1,6 @@
 import {
   CommandPermissionLevel,
+  CustomCommandParamType,
   CustomCommandOrigin,
   CustomCommandResult,
   CustomCommandStatus,
@@ -15,6 +16,8 @@ import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
+import { TeamId } from "../types";
+import { DebugLogger } from "./DebugLogger";
 
 export class CommandHandler {
   constructor(
@@ -24,11 +27,22 @@ export class CommandHandler {
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
-    private readonly audioManager: AudioManager
+    private readonly audioManager: AudioManager,
+    private readonly debugLogger: DebugLogger
   ) {}
 
   registerCommands(): void {
     system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
+      // Define valid enum values
+      customCommandRegistry.registerEnum("lr:teamid", ["crimson", "azure"]);
+      customCommandRegistry.registerEnum("lr:configkey", [
+        "easyChallengeCount",
+        "mediumChallengeCount",
+        "hardChallengeCount",
+        "totalRounds",
+        "roundDurationTicks",
+      ]);
+
       customCommandRegistry.registerCommand(
         {
           name: "lr:teamup",
@@ -71,12 +85,92 @@ export class CommandHandler {
 
       customCommandRegistry.registerCommand(
         {
-          name: "lr:config",
-          description: "Updates Loot Rush configuration",
+          name: "lr:forceround",
+          description: "Jump to specific round",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+          mandatoryParameters: [{ name: "round", type: CustomCommandParamType.Integer }],
+        },
+        (origin, args) => this.handleForceRound(origin, args)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:setscore",
+          description: "Set a team's score",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+          mandatoryParameters: [
+            { name: "lr:teamid", type: CustomCommandParamType.Enum },
+            { name: "points", type: CustomCommandParamType.Integer },
+          ],
+        },
+        (origin, args) => this.handleSetScore(origin, args)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:pause",
+          description: "Pause the game timer and checks",
           permissionLevel: CommandPermissionLevel.GameDirectors,
           cheatsRequired: false,
         },
-        (origin, args) => this.handleConfig(origin, args)
+        (origin) => this.handlePause(origin)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:resume",
+          description: "Resume the game timer and checks",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        (origin) => this.handleResume(origin)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:debug",
+          description: "Toggle debug logging for Loot Rush",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+          mandatoryParameters: [{ name: "enabled", type: CustomCommandParamType.Boolean }],
+        },
+        (origin, args) => this.handleDebugToggle(origin, args)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:config",
+          description: "View current Loot Rush configuration",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        (origin) => this.handleConfigView(origin)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:config:set",
+          description: "Set a Loot Rush configuration value",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+          mandatoryParameters: [
+            { name: "lr:configkey", type: CustomCommandParamType.Enum },
+            { name: "value", type: CustomCommandParamType.Integer },
+          ],
+        },
+        (origin, args) => this.handleConfigSet(origin, args)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:config:reset",
+          description: "Reset Loot Rush configuration to defaults",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        (origin) => this.handleConfigReset(origin)
       );
     });
   }
@@ -131,7 +225,7 @@ export class CommandHandler {
       this.hudManager.updateScores(p);
       this.hudManager.updateChallenges(p);
     });
-    const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20;
+    const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
     world.sendMessage(`Round 1 with ${active.length} challenges. Duration: ${durationInMins} minutes.`);
     this.audioManager.playStartHorn(players);
@@ -174,8 +268,8 @@ export class CommandHandler {
           fadeOutDuration: 10,
         });
         this.audioManager.playTeamReveal([p]);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        this.debugLogger.warn("Failed to show reveal title", p.nameTag, err);
       }
     });
 
@@ -208,8 +302,8 @@ export class CommandHandler {
             stayDuration: step,
             fadeOutDuration: 0,
           });
-        } catch {
-          /* ignore */
+        } catch (err) {
+          this.debugLogger.warn("Failed to show shuffle title", p.nameTag, err);
         }
       });
       this.audioManager.playTeamShuffleTick(players);
@@ -230,17 +324,167 @@ export class CommandHandler {
   }
 
   handleReset(origin: CustomCommandOrigin): CustomCommandResult {
-    this.gameStateManager.endGame();
-    this.teamManager.clearTeams();
-    this.challengeManager.resetChallenges();
+    this.gameStateManager.resetGame();
     void origin;
-    return { status: CustomCommandStatus.Success, message: "Reset scaffold ready" };
+    return { status: CustomCommandStatus.Success, message: "State reset. Use lr:teamup to form teams." };
   }
 
-  handleConfig(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+  handleForceRound(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+    if (!this.gameStateManager.isGameActive()) {
+      return { status: CustomCommandStatus.Failure, message: "§cGame must be active to force a round." };
+    }
+
+    const roundArg = args?.[0];
+    const round = roundArg ? parseInt(roundArg, 10) : NaN;
+    const totalRounds = this.configManager.getConfigValue("totalRounds");
+
+    if (!Number.isInteger(round) || round < 1 || round > totalRounds) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message: `§cInvalid round. Enter a value between 1 and ${totalRounds}.`,
+      };
+    }
+
+    this.gameStateManager.forceRound(round);
     void origin;
-    void args;
+    return { status: CustomCommandStatus.Success, message: `Forced to round ${round}.` };
+  }
+
+  handleSetScore(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+    const teamArg = args?.[0]?.toLowerCase();
+    const pointsArg = args?.[1];
+    const team = teamArg === "crimson" || teamArg === "azure" ? (teamArg as TeamId) : undefined;
+    const points = pointsArg ? parseInt(pointsArg, 10) : NaN;
+
+    if (!team) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message: "§cInvalid team. Use 'crimson' or 'azure'.",
+      };
+    }
+    if (!Number.isInteger(points)) {
+      return { status: CustomCommandStatus.Failure, message: "§cPoints must be an integer." };
+    }
+
+    this.teamManager.setTeamScore(team, points);
+    const players = world.getAllPlayers();
+    players.forEach((p) => this.hudManager.updateScores(p));
+    void origin;
+    return { status: CustomCommandStatus.Success, message: `Set ${team} score to ${points}.` };
+  }
+
+  handlePause(origin: CustomCommandOrigin): CustomCommandResult {
+    if (!this.gameStateManager.isGameActive()) {
+      return { status: CustomCommandStatus.Failure, message: "§cGame is not active." };
+    }
+    this.gameStateManager.pauseGame();
+    this.chestManager.stopMonitoring();
+    void origin;
+    return { status: CustomCommandStatus.Success, message: "Game paused." };
+  }
+
+  handleResume(origin: CustomCommandOrigin): CustomCommandResult {
+    if (!this.gameStateManager.isGameActive()) {
+      return { status: CustomCommandStatus.Failure, message: "§cGame is not active." };
+    }
+    this.gameStateManager.resumeGame();
+    this.chestManager.monitorChests();
+    void origin;
+    return { status: CustomCommandStatus.Success, message: "Game resumed." };
+  }
+
+  handleDebugToggle(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+    const flagRaw = args?.[0];
+    const enabled = flagRaw === "true";
+    this.debugLogger.setEnabled(enabled);
+    const statusText = enabled ? "enabled" : "disabled";
+    this.debugLogger.log(`Debug command toggled: ${statusText}`);
+    void origin;
+    return { status: CustomCommandStatus.Success, message: `Debug logging ${statusText}.` };
+  }
+
+  handleConfigView(origin: CustomCommandOrigin): CustomCommandResult {
+    const current = this.configManager.getConfig();
+    const defaults = this.configManager.getDefaults();
+
+    const lines = [
+      "§6=== Loot Rush Configuration ===",
+      `§eEasy Challenges: §f${current.easyChallengeCount} §7(default: ${defaults.easyChallengeCount})`,
+      `§eMedium Challenges: §f${current.mediumChallengeCount} §7(default: ${defaults.mediumChallengeCount})`,
+      `§eHard Challenges: §f${current.hardChallengeCount} §7(default: ${defaults.hardChallengeCount})`,
+      `§eTotal Rounds: §f${current.totalRounds} §7(default: ${defaults.totalRounds})`,
+      `§eRound Duration: §f${current.roundDurationTicks} ticks §7(${Math.floor(current.roundDurationTicks / 20)}s)`,
+    ];
+
+    world.sendMessage(lines.join("\n"));
+    void origin;
+    return { status: CustomCommandStatus.Success };
+  }
+
+  handleConfigSet(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {
+    if (this.gameStateManager.isGameActive()) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message: "§cCannot change config during an active game. Use lr:end first.",
+      };
+    }
+
+    const key = args?.[0] as keyof ReturnType<ConfigManager["getConfig"]> | undefined;
+    const rawValue = args?.[1];
+
+    if (!key || rawValue === undefined) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message:
+          "§cUsage: lr:config:set <key> <value>. Keys: easyChallengeCount, mediumChallengeCount, hardChallengeCount, totalRounds, roundDurationTicks",
+      };
+    }
+
+    const value = parseInt(rawValue, 10);
+    if (!Number.isInteger(value)) {
+      return { status: CustomCommandStatus.Failure, message: "§cValue must be an integer." };
+    }
+
+    const limits: Record<string, { min: number; max: number }> = {
+      easyChallengeCount: { min: 0, max: 10 },
+      mediumChallengeCount: { min: 0, max: 10 },
+      hardChallengeCount: { min: 0, max: 10 },
+      totalRounds: { min: 1, max: 10 },
+      roundDurationTicks: { min: 1200, max: 72000 },
+    };
+
+    const limit = limits[key as string];
+    if (!limit) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message:
+          "§cInvalid key. Valid keys: easyChallengeCount, mediumChallengeCount, hardChallengeCount, totalRounds, roundDurationTicks",
+      };
+    }
+
+    if (value < limit.min || value > limit.max) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message: `§cInvalid value for ${key}. Must be between ${limit.min} and ${limit.max}.`,
+      };
+    }
+
+    this.configManager.setConfig(key, value as never);
     this.configManager.saveConfig();
-    return { status: CustomCommandStatus.Success, message: "Config scaffold ready" };
+    void origin;
+    return { status: CustomCommandStatus.Success, message: `§aConfiguration updated: ${key} = ${value}` };
+  }
+
+  handleConfigReset(origin: CustomCommandOrigin): CustomCommandResult {
+    if (this.gameStateManager.isGameActive()) {
+      return {
+        status: CustomCommandStatus.Failure,
+        message: "§cCannot reset config during an active game. Use lr:end first.",
+      };
+    }
+    this.configManager.resetToDefaults();
+    this.configManager.saveConfig();
+    void origin;
+    return { status: CustomCommandStatus.Success, message: "§aConfiguration reset to defaults." };
   }
 }

@@ -1,8 +1,11 @@
 export const DYNAMIC_KEYS = {
   gameActive: "lootRush:gameActive",
   teamsFormed: "lootRush:teamsFormed",
+  gamePaused: "lootRush:gamePaused",
+  debugMode: "lootRush:debugMode",
   currentRound: "lootRush:currentRound",
   roundStartTick: "lootRush:roundStartTick",
+  pausedAtTick: "lootRush:pausedAtTick",
   crimsonScore: "lootRush:crimsonScore",
   azureScore: "lootRush:azureScore",
   activeChallenges: "lootRush:activeChallenges",

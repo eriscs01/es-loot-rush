@@ -7,13 +7,15 @@ import { HUDManager } from "./managers/HUDManager";
 import { CommandHandler } from "./managers/CommandHandler";
 import { ConfigManager } from "./managers/ConfigManager";
 import { AudioManager } from "./managers/AudioManager";
+import { DebugLogger } from "./managers/DebugLogger";
 
-const configManager = new ConfigManager(world);
-const teamManager = new TeamManager(world, configManager);
-const challengeManager = new ChallengeManager(configManager);
-const hudManager = new HUDManager(world, configManager, challengeManager, teamManager);
-const audioManager = new AudioManager(world);
-const chestManager = new ChestManager(world, challengeManager, teamManager, audioManager, hudManager);
+const debugLogger = new DebugLogger(world);
+const configManager = new ConfigManager(world, debugLogger);
+const teamManager = new TeamManager(world, configManager, debugLogger);
+const challengeManager = new ChallengeManager(configManager, world, debugLogger);
+const hudManager = new HUDManager(world, configManager, challengeManager, teamManager, debugLogger);
+const audioManager = new AudioManager(world, debugLogger);
+const chestManager = new ChestManager(world, challengeManager, teamManager, audioManager, hudManager, debugLogger);
 
 const gameStateManager = new GameStateManager(
   configManager,
@@ -22,6 +24,7 @@ const gameStateManager = new GameStateManager(
   chestManager,
   hudManager,
   audioManager,
+  debugLogger,
   world
 );
 
@@ -32,7 +35,8 @@ const commandHandler = new CommandHandler(
   chestManager,
   hudManager,
   configManager,
-  audioManager
+  audioManager,
+  debugLogger
 );
 
 gameStateManager.initialize();

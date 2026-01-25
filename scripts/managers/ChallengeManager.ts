@@ -4,6 +4,7 @@ import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
 import { ANY_VARIANTS } from "../config/variants";
 import { TeamId } from "../types";
+import { DebugLogger } from "./DebugLogger";
 
 export type ChallengeState = "available" | "completed" | "locked";
 
@@ -29,7 +30,8 @@ export class ChallengeManager {
 
   constructor(
     private readonly configManager: ConfigManager,
-    private readonly worldRef = world
+    private readonly worldRef = world,
+    private readonly debugLogger?: DebugLogger
   ) {
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
   }
@@ -79,6 +81,7 @@ export class ChallengeManager {
     this.persistActive();
     this.completedChallenges = [];
     this.persistCompleted();
+    this.debugLogger?.log(`Selected challenges: ${selections.map((c) => c.id).join(", ")}`);
     return this.getActiveChallenges();
   }
 
@@ -113,6 +116,10 @@ export class ChallengeManager {
       this.persistCompleted();
     }
 
+    if (completed) {
+      this.debugLogger?.log(`Challenge ${challengeId} completed by ${team}`);
+    }
+
     return completed;
   }
 
@@ -136,7 +143,8 @@ export class ChallengeManager {
       try {
         const parsed = JSON.parse(raw) as ChallengeRecord[];
         this.activeChallenges = parsed;
-      } catch {
+      } catch (err) {
+        this.debugLogger?.warn("Failed to parse active challenges", err);
         this.activeChallenges = [];
       }
     }
@@ -153,7 +161,8 @@ export class ChallengeManager {
       try {
         const parsed = JSON.parse(raw) as ChallengeRecord[];
         this.completedChallenges = parsed;
-      } catch {
+      } catch (err) {
+        this.debugLogger?.warn("Failed to parse completed challenges", err);
         this.completedChallenges = [];
       }
     }
@@ -183,9 +192,11 @@ export class ChallengeManager {
         total += item.amount;
       }
       if (total >= challenge.count) {
+        this.debugLogger?.log(`Validation passed for challenge ${challenge.id}; total=${total}`);
         return true;
       }
     }
+    this.debugLogger?.log(`Validation failed for challenge ${challenge.id}; total=${total}`);
     return false;
   }
 

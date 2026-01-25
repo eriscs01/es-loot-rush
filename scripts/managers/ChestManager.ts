@@ -5,6 +5,7 @@ import { ChallengeManager, ChallengeRecord } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
 import { AudioManager } from "./AudioManager";
 import { HUDManager } from "./HUDManager";
+import { DebugLogger } from "./DebugLogger";
 
 export class ChestManager {
   private crimsonChestLocation: Vector3 | undefined;
@@ -17,7 +18,8 @@ export class ChestManager {
     private readonly challengeManager: ChallengeManager,
     private readonly teamManager: TeamManager,
     private readonly audioManager?: AudioManager,
-    private readonly hudManager?: HUDManager
+    private readonly hudManager?: HUDManager,
+    private readonly debugLogger?: DebugLogger
   ) {
     this.registerProtection();
     this.loadLocationsFromProperties();
@@ -41,6 +43,7 @@ export class ChestManager {
     this.crimsonChestLocation = crimsonLoc;
     this.azureChestLocation = azureLoc;
     this.persistLocations();
+    this.debugLogger?.log(`Placed chests at crimson=${JSON.stringify(crimsonLoc)} azure=${JSON.stringify(azureLoc)}`);
   }
 
   getChestLocation(team: TeamId): Vector3 | undefined {
@@ -50,6 +53,7 @@ export class ChestManager {
   monitorChests(): void {
     if (this.monitorHandle !== undefined) return;
     this.monitorHandle = system.runInterval(() => this.pollChests(), 10);
+    this.debugLogger?.log("Started chest monitoring");
   }
 
   stopMonitoring(): void {
@@ -58,6 +62,7 @@ export class ChestManager {
       system.clearRun(this.monitorHandle);
     }
     this.monitorHandle = undefined;
+    this.debugLogger?.log("Stopped chest monitoring");
   }
 
   validateChestContents(team: TeamId): boolean {
@@ -74,6 +79,17 @@ export class ChestManager {
     for (let i = 0; i < container.size; i++) {
       container.setItem(i, undefined);
     }
+    this.debugLogger?.log(`Cleared chest for team ${team}`);
+  }
+
+  clearChestReferences(): void {
+    this.crimsonChestLocation = undefined;
+    this.azureChestLocation = undefined;
+    this.spawnLocation = undefined;
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestCrimsonLocation, "{}");
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestAzureLocation, "{}");
+    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.spawnLocation, "{}");
+    this.debugLogger?.log("Cleared stored chest and spawn locations");
   }
 
   protectChest(location: Vector3): void {
@@ -159,7 +175,8 @@ export class ChestManager {
         return { x: parsed.x, y: parsed.y, z: parsed.z };
       }
       return undefined;
-    } catch {
+    } catch (err) {
+      this.debugLogger?.warn("Failed to parse location property", key, err);
       return undefined;
     }
   }
@@ -175,8 +192,8 @@ export class ChestManager {
         | { container?: { setCustomName: (label: string) => void } }
         | undefined;
       container?.container?.setCustomName?.(name);
-    } catch {
-      // Ignore placement errors (e.g., invalid location)
+    } catch (err) {
+      this.debugLogger?.warn("Failed to place chest block", name, err);
     }
   }
 
@@ -214,6 +231,7 @@ export class ChestManager {
     for (let i = 0; i < container.size; i++) {
       container.setItem(i, undefined);
     }
+    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
 
     const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§9Azure Architects";
     this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
@@ -231,7 +249,8 @@ export class ChestManager {
       const block = dimension.getBlock(location);
       const inventory = block?.getComponent("inventory") as { container?: Container } | undefined;
       return inventory?.container;
-    } catch {
+    } catch (err) {
+      this.debugLogger?.warn("Failed to read chest container", location, err);
       return undefined;
     }
   }
