@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "ES-Loot-Rush",
+    "description": "ES-Loot-Rush",
+    "uuid": "d30e492f-c1e0-452b-9129-d08bfa1063b1",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 130]
+  },
+  "modules": [
+    {
+      "description": "My Resource Pack",
+      "type": "resources",
+      "uuid": "515bcdef-aeef-44b7-b0cd-3e8de3efbfe6",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "3c169c3d-74b4-45ab-b190-3ec7afff692f",
+      "version": [1, 0, 0]
+    }
+  ],
+  "metadata": {
+    "generated_with": {
+      "mctoolscli": ["0.15.3"]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "ES-Loot-Rush",
+    "description": "ES-Loot-Rush",
+    "uuid": "3c169c3d-74b4-45ab-b190-3ec7afff692f",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 130]
+  },
+  "modules": [
+    {
+      "description": "Script resources",
+      "language": "javascript",
+      "type": "script",
+      "uuid": "25e1975e-a619-4b67-b89d-77fb44eaa50c",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": [2, 4, 0]
+    }
+  ],
+  "metadata": {
+    "generated_with": {
+      "mctoolscli": ["0.15.3"]
+    }
+  }
+}
