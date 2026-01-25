@@ -12,9 +12,9 @@ import { DebugLogger } from "./managers/DebugLogger";
 const debugLogger = new DebugLogger(world);
 const configManager = new ConfigManager(world, debugLogger);
 const teamManager = new TeamManager(world, configManager, debugLogger);
-const challengeManager = new ChallengeManager(configManager, world, debugLogger);
-const hudManager = new HUDManager(world, configManager, challengeManager, teamManager, debugLogger);
 const audioManager = new AudioManager(world, debugLogger);
+const hudManager = new HUDManager(world, configManager, teamManager, debugLogger);
+const challengeManager = new ChallengeManager(configManager, teamManager, hudManager, audioManager, world, debugLogger);
 const chestManager = new ChestManager(world, challengeManager, teamManager, audioManager, hudManager, debugLogger);
 
 const gameStateManager = new GameStateManager(

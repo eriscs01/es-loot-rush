@@ -1,6 +1,6 @@
 import { Player, system, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
-import { ChallengeManager } from "./ChallengeManager";
+import { ChallengeRecord } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
@@ -9,7 +9,6 @@ export class HUDManager {
   constructor(
     private readonly worldRef = world,
     private readonly configManager: ConfigManager,
-    private readonly challengeManager: ChallengeManager,
     private readonly teamManager: TeamManager,
     private readonly debugLogger?: DebugLogger
   ) {}
@@ -22,9 +21,8 @@ export class HUDManager {
     this.debugLogger?.log(`HUD timer update for ${player.nameTag}: ${formatted}`);
   }
 
-  updateChallenges(player: Player): void {
+  updateChallenges(player: Player, challenges: ChallengeRecord[]): void {
     if (!this.isGameActive()) return;
-    const challenges = this.challengeManager?.getActiveChallenges() ?? [];
 
     this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
 

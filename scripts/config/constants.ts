@@ -18,4 +18,7 @@ export const DYNAMIC_KEYS = {
   spawnLocation: "lootRush:spawnLocation",
 } as const;
 
+export const BACKUP_PREFIX = "lootRush:backup_" as const;
+export const BACKUP_TIMESTAMP = "lootRush:backup_timestamp" as const;
+
 export const DYNAMIC_PROPERTY_LIMIT_BYTES = 16_000; // Safety buffer under 16KB limit

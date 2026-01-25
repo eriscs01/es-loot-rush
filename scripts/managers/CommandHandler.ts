@@ -172,6 +172,26 @@ export class CommandHandler {
         },
         (origin) => this.handleConfigReset(origin)
       );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:backup",
+          description: "Create a backup of Loot Rush state",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        (origin) => this.handleBackup(origin)
+      );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:restore",
+          description: "Restore Loot Rush state from backup",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        (origin) => this.handleRestore(origin)
+      );
     });
   }
 
@@ -219,11 +239,12 @@ export class CommandHandler {
     this.gameStateManager.startGame();
     const active = this.challengeManager.selectChallenges();
     const players = world.getAllPlayers();
+    const challenges = this.challengeManager.getActiveChallenges();
     players.forEach((p) => {
       this.hudManager.updateRoundInfo(p);
       this.hudManager.updateTimer(p);
       this.hudManager.updateScores(p);
-      this.hudManager.updateChallenges(p);
+      this.hudManager.updateChallenges(p, challenges);
     });
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
@@ -282,11 +303,13 @@ export class CommandHandler {
     this.teamManager.setSpawnPointForAll(players, center);
     this.gameStateManager.setTeamsFormed(true);
 
-    const crimsonRoster = this.teamManager.getRoster("crimson").join(", ") || "(none)";
-    const azureRoster = this.teamManager.getRoster("azure").join(", ") || "(none)";
+    const crimsonList = this.teamManager.getRoster("crimson");
+    const azureList = this.teamManager.getRoster("azure");
+    const crimsonRoster = crimsonList.join(", ") || "(none)";
+    const azureRoster = azureList.join(", ") || "(none)";
     world.sendMessage(`§aTeams formed! Bounty chests placed!`);
-    world.sendMessage(`§cCrimson Crusaders: §f${crimsonRoster}`);
-    world.sendMessage(`§9Azure Architects: §f${azureRoster}`);
+    world.sendMessage(`§cCrimson Crusaders (${crimsonList.length}): §f${crimsonRoster}`);
+    world.sendMessage(`§9Azure Architects (${azureList.length}): §f${azureRoster}`);
   }
 
   private async playShuffleAnimation(players: Player[]): Promise<void> {
@@ -391,6 +414,24 @@ export class CommandHandler {
     this.chestManager.monitorChests();
     void origin;
     return { status: CustomCommandStatus.Success, message: "Game resumed." };
+  }
+
+  handleBackup(origin: CustomCommandOrigin): CustomCommandResult {
+    const { saved, timestamp } = this.gameStateManager.backupState();
+    void origin;
+    return {
+      status: CustomCommandStatus.Success,
+      message: `§aBackup saved (${saved} props) at tick ${timestamp}.`,
+    };
+  }
+
+  handleRestore(origin: CustomCommandOrigin): CustomCommandResult {
+    const { restored, timestamp } = this.gameStateManager.restoreState();
+    void origin;
+    return {
+      status: CustomCommandStatus.Success,
+      message: `§aState restored from backup (tick ${timestamp}, ${restored} props).`,
+    };
   }
 
   handleDebugToggle(origin: CustomCommandOrigin, args?: string[]): CustomCommandResult {

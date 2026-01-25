@@ -7,7 +7,7 @@ import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { GameConfig } from "../types";
-import { DYNAMIC_KEYS } from "../config/constants";
+import { BACKUP_PREFIX, BACKUP_TIMESTAMP, DYNAMIC_KEYS } from "../config/constants";
 
 export class GameStateManager {
   private gameActive = false;
@@ -115,6 +115,50 @@ export class GameStateManager {
     this.worldRef.sendMessage("§6[LOOT RUSH] §fState reset. Run lr:teamup to form teams.");
   }
 
+  backupState(): { saved: number; timestamp: number } {
+    const keys = Object.values(DYNAMIC_KEYS);
+    let saved = 0;
+
+    keys.forEach((key) => {
+      try {
+        const value = this.worldRef.getDynamicProperty(key);
+        this.worldRef.setDynamicProperty(this.getBackupKey(key), JSON.stringify(value ?? null));
+        saved += 1;
+      } catch (err) {
+        this.debugLogger?.warn("Failed to backup property", key, err);
+      }
+    });
+
+    const timestamp = system.currentTick;
+    this.worldRef.setDynamicProperty(BACKUP_TIMESTAMP, timestamp);
+    this.debugLogger?.log(`Backup saved at tick ${timestamp} (${saved} properties)`);
+
+    return { saved, timestamp };
+  }
+
+  restoreState(): { restored: number; timestamp: number } {
+    const keys = Object.values(DYNAMIC_KEYS);
+    let restored = 0;
+
+    keys.forEach((key) => {
+      const backupKey = this.getBackupKey(key);
+      const raw = this.worldRef.getDynamicProperty(backupKey);
+      if (typeof raw !== "string") return;
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        this.setFromBackup(key, parsed);
+        restored += 1;
+      } catch (err) {
+        this.debugLogger?.warn("Failed to restore property", key, err);
+      }
+    });
+
+    this.reloadStateFromProperties();
+    const timestamp = this.getNumberProperty(BACKUP_TIMESTAMP, 0);
+    this.debugLogger?.log(`Restored state from backup tick ${timestamp}; restored=${restored}`);
+    return { restored, timestamp };
+  }
+
   pauseGame(): void {
     if (this.gamePaused) return;
     this.gamePaused = true;
@@ -170,14 +214,14 @@ export class GameStateManager {
     this.debugLogger?.log(`Transitioning to round ${this.currentRound}`);
 
     this.challengeManager.resetChallenges();
-    this.challengeManager.selectChallenges();
+    const challenges = this.challengeManager.selectChallenges();
 
     const players = this.worldRef.getAllPlayers();
     this.worldRef.sendMessage(`§6[LOOT RUSH] §fRound ${this.currentRound} begins!`);
     players.forEach((p) => {
       this.hudManager.updateRoundInfo(p);
       this.hudManager.updateTimer(p);
-      this.hudManager.updateChallenges(p);
+      this.hudManager.updateChallenges(p, challenges);
     });
     this.audioManager?.playStartHorn(players);
   }
@@ -238,6 +282,10 @@ export class GameStateManager {
       propertyRegistry.registerString(DYNAMIC_KEYS.chestCrimsonLocation, 16000);
       propertyRegistry.registerString(DYNAMIC_KEYS.chestAzureLocation, 16000);
       propertyRegistry.registerString(DYNAMIC_KEYS.spawnLocation, 16000);
+      // Backup copies stored as strings for safety
+      const backupKeys = Object.values(DYNAMIC_KEYS).map((key) => `${BACKUP_PREFIX}${key.replace(/^lootRush:/, "")}`);
+      backupKeys.forEach((backupKey) => propertyRegistry.registerString(backupKey, 16000));
+      propertyRegistry.registerNumber(BACKUP_TIMESTAMP);
     });
   }
 
@@ -436,7 +484,128 @@ export class GameStateManager {
     this.worldRef.sendMessage(
       `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §9Azure: ${azureScore}. §eWinner: ${winnerLabel}`
     );
+    try {
+      const dim = this.worldRef.getDimension("overworld");
+      const targets = winnerLabel === "Tie" ? ["crimson", "azure"] : [winnerLabel.toLowerCase()];
+      targets.forEach((teamId) => {
+        const loc = this.chestManager.getChestLocation(teamId as "crimson" | "azure");
+        if (loc) {
+          dim.spawnParticle("minecraft:firework_rocket", loc);
+        }
+      });
+    } catch (err) {
+      this.debugLogger?.warn("Failed to spawn victory fireworks", err);
+    }
     this.audioManager?.playVictorySounds(players);
+  }
+
+  private getBackupKey(key: string): string {
+    const suffix = key.replace(/^lootRush:/, "");
+    return `${BACKUP_PREFIX}${suffix}`;
+  }
+
+  private setFromBackup(key: string, value: unknown): void {
+    const booleanKeys = new Set<string>([
+      DYNAMIC_KEYS.gameActive,
+      DYNAMIC_KEYS.teamsFormed,
+      DYNAMIC_KEYS.gamePaused,
+      DYNAMIC_KEYS.debugMode,
+    ]);
+    const numberKeys = new Set<string>([
+      DYNAMIC_KEYS.currentRound,
+      DYNAMIC_KEYS.roundStartTick,
+      DYNAMIC_KEYS.pausedAtTick,
+      DYNAMIC_KEYS.crimsonScore,
+      DYNAMIC_KEYS.azureScore,
+    ]);
+    const stringKeys = new Set<string>([
+      DYNAMIC_KEYS.activeChallenges,
+      DYNAMIC_KEYS.completedChallenges,
+      DYNAMIC_KEYS.config,
+      DYNAMIC_KEYS.crimsonPlayers,
+      DYNAMIC_KEYS.azurePlayers,
+      DYNAMIC_KEYS.chestCrimsonLocation,
+      DYNAMIC_KEYS.chestAzureLocation,
+      DYNAMIC_KEYS.spawnLocation,
+    ]);
+
+    if (booleanKeys.has(key)) {
+      this.worldRef.setDynamicProperty(key, Boolean(value));
+      return;
+    }
+    if (numberKeys.has(key)) {
+      const parsed = typeof value === "number" ? value : Number(value);
+      this.worldRef.setDynamicProperty(key, Number.isFinite(parsed) ? parsed : 0);
+      return;
+    }
+    if (stringKeys.has(key)) {
+      const payload = typeof value === "string" ? value : JSON.stringify(value ?? {});
+      this.worldRef.setDynamicProperty(key, payload);
+      return;
+    }
+    try {
+      this.worldRef.setDynamicProperty(key, JSON.stringify(value ?? {}));
+    } catch (err) {
+      this.debugLogger?.warn("Failed to stringify backup value", key, err);
+    }
+  }
+
+  private reloadStateFromProperties(): void {
+    this.gameActive = this.getBooleanProperty(DYNAMIC_KEYS.gameActive, false);
+    this.gamePaused = this.getBooleanProperty(DYNAMIC_KEYS.gamePaused, false);
+    this.currentRound = this.getNumberProperty(DYNAMIC_KEYS.currentRound, 1);
+    this.roundStartTick = this.getNumberProperty(DYNAMIC_KEYS.roundStartTick, system.currentTick);
+    this.pausedAtTick = this.getNumberProperty(DYNAMIC_KEYS.pausedAtTick, 0);
+    this.resetTimerWarnings();
+
+    this.configManager.loadConfig();
+    this.teamManager.loadRostersFromProperties();
+    this.challengeManager.getActiveChallenges();
+    this.challengeManager.getCompletedChallenges();
+    this.chestManager.reloadFromProperties();
+
+    this.stopRoundTimer();
+    if (this.gameActive) {
+      this.startRoundTimer();
+    }
+
+    if (this.gamePaused && this.gameActive) {
+      this.applyPauseEffects();
+    } else {
+      this.clearPauseEffects();
+    }
+
+    if (this.gameActive && !this.gamePaused) {
+      this.chestManager.monitorChests();
+    } else {
+      this.chestManager.stopMonitoring();
+    }
+
+    if (this.isTeamsFormed()) {
+      this.teamManager.registerJoinHandlers();
+    } else {
+      this.teamManager.unregisterJoinHandlers();
+    }
+
+    const spawn = this.chestManager.getSpawnLocation();
+    const players = this.worldRef.getAllPlayers();
+    const activeChallenges = this.challengeManager.getActiveChallenges();
+
+    players.forEach((p) => {
+      this.teamManager.applyTeamColor(p);
+      if (spawn) {
+        this.teamManager.setSpawnPointForPlayer(p, spawn);
+      }
+      if (this.gameActive) {
+        this.hudManager.updateRoundInfo(p);
+        this.hudManager.updateTimer(p);
+        this.hudManager.updateScores(p);
+        this.hudManager.updateChallenges(p, activeChallenges);
+        this.hudManager.setPaused(p, this.gamePaused);
+      } else {
+        this.hudManager.clearHUD(p);
+      }
+    });
   }
 
   private setBooleanProperty(key: string, value: boolean): void {

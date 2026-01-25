@@ -1,9 +1,12 @@
-import { Container, ItemStack, world } from "@minecraft/server";
+import { Container, ItemStack, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
 import { ANY_VARIANTS } from "../config/variants";
 import { TeamId } from "../types";
+import { TeamManager } from "./TeamManager";
+import { HUDManager } from "./HUDManager";
+import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 
 export type ChallengeState = "available" | "completed" | "locked";
@@ -30,6 +33,9 @@ export class ChallengeManager {
 
   constructor(
     private readonly configManager: ConfigManager,
+    private readonly teamManager: TeamManager,
+    private readonly hudManager: HUDManager,
+    private readonly audioManager: AudioManager,
     private readonly worldRef = world,
     private readonly debugLogger?: DebugLogger
   ) {
@@ -121,6 +127,42 @@ export class ChallengeManager {
     }
 
     return completed;
+  }
+
+  handleChallengeCompletion(team: TeamId, challenge: ChallengeRecord, chestLocation?: Vector3): boolean {
+    const completed = this.completeChallenge(challenge.id, team);
+    if (!completed) return false;
+
+    this.teamManager.addPoints(team, challenge.points);
+    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}`);
+
+    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§9Azure Architects";
+    this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
+
+    const players = this.worldRef.getAllPlayers();
+    const winners = players.filter((p) => this.teamManager.getPlayerTeam(p) === team);
+    const others = players.filter((p) => {
+      const t = this.teamManager.getPlayerTeam(p);
+      return t && t !== team;
+    });
+    this.audioManager?.playChallengeComplete(winners, others);
+
+    if (chestLocation) {
+      try {
+        const dim = this.worldRef.getDimension("overworld");
+        dim.spawnParticle("minecraft:totem_particle", chestLocation);
+      } catch (err) {
+        this.debugLogger?.warn("Failed to spawn completion particle", err);
+      }
+    }
+
+    const active = this.getActiveChallenges();
+    players.forEach((p) => {
+      this.hudManager?.updateScores(p);
+      this.hudManager?.updateChallenges(p, active);
+    });
+
+    return true;
   }
 
   resetChallenges(): void {

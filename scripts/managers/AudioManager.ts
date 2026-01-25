@@ -12,9 +12,9 @@ export class AudioManager {
     at30: { soundId: string; pitch?: number };
     at10: { soundId: string; pitch?: number };
   } = {
-    at60: { soundId: "note.pling" },
-    at30: { soundId: "note.harp", pitch: 1.4 },
-    at10: { soundId: "note.bass" },
+    at60: { soundId: "note.bell", pitch: 1.0 },
+    at30: { soundId: "note.bell", pitch: 2.0 },
+    at10: { soundId: "note.xylobone", pitch: 2.0 },
   };
 
   playTeamFormationSounds(players: Player[]): void {
@@ -29,8 +29,10 @@ export class AudioManager {
     players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
   }
 
-  playChallengeSounds(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
+  playChallengeComplete(winners: Player[], others: Player[]): void {
+    winners.forEach((player) => this.playSound(player, "random.levelup"));
+    // Explicitly silent for opposing team
+    void others;
   }
 
   playTimerWarning60(players: Player[]): void {
@@ -57,6 +59,10 @@ export class AudioManager {
   }
 
   playAccessDenied(players: Player[]): void {
+    players.forEach((player) => this.playSound(player, "note.bass"));
+  }
+
+  playInvalidDeposit(players: Player[]): void {
     players.forEach((player) => this.playSound(player, "note.bass"));
   }
 

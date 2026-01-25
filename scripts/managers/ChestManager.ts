@@ -12,6 +12,7 @@ export class ChestManager {
   private azureChestLocation: Vector3 | undefined;
   private spawnLocation: Vector3 | undefined;
   private monitorHandle?: number;
+  private nameRefreshHandle?: number;
 
   constructor(
     private readonly worldRef = world,
@@ -23,6 +24,7 @@ export class ChestManager {
   ) {
     this.registerProtection();
     this.loadLocationsFromProperties();
+    this.startNameRefresh();
   }
 
   placeChests(centerLocation: Vector3, dimension?: Dimension): void {
@@ -43,6 +45,7 @@ export class ChestManager {
     this.crimsonChestLocation = crimsonLoc;
     this.azureChestLocation = azureLoc;
     this.persistLocations();
+    this.startNameRefresh();
     this.debugLogger?.log(`Placed chests at crimson=${JSON.stringify(crimsonLoc)} azure=${JSON.stringify(azureLoc)}`);
   }
 
@@ -89,6 +92,7 @@ export class ChestManager {
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestCrimsonLocation, "{}");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestAzureLocation, "{}");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.spawnLocation, "{}");
+    this.stopNameRefresh();
     this.debugLogger?.log("Cleared stored chest and spawn locations");
   }
 
@@ -98,6 +102,11 @@ export class ChestManager {
 
   getSpawnLocation(): Vector3 | undefined {
     return this.spawnLocation;
+  }
+
+  reloadFromProperties(): void {
+    this.loadLocationsFromProperties();
+    this.startNameRefresh();
   }
 
   private registerProtection(): void {
@@ -113,6 +122,9 @@ export class ChestManager {
       const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, loc);
       const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, loc);
       if (!isCrimson && !isAzure) return;
+
+      const teamsFormed = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.teamsFormed) === true;
+      if (!teamsFormed) return;
 
       const playerTeam = this.teamManager.getPlayerTeam(event.player);
       const chestTeam: TeamId | undefined = isCrimson ? "crimson" : isAzure ? "azure" : undefined;
@@ -217,30 +229,47 @@ export class ChestManager {
 
     for (const challenge of challenges) {
       if (this.challengeManager.validateDeposit(container, challenge)) {
-        this.handleChallengeCompletion(team, challenge, container);
+        const completed = this.challengeManager.handleChallengeCompletion(team, challenge, loc);
+        if (completed) {
+          for (let i = 0; i < container.size; i++) {
+            container.setItem(i, undefined);
+          }
+          this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
+        }
         break;
       }
     }
   }
 
-  private handleChallengeCompletion(team: TeamId, challenge: ChallengeRecord, container: Container): void {
-    const completed = this.challengeManager.completeChallenge(challenge.id, team);
-    if (!completed) return;
+  private startNameRefresh(): void {
+    if (this.nameRefreshHandle !== undefined || typeof system.runInterval !== "function") return;
+    this.nameRefreshHandle = system.runInterval(() => this.refreshChestNames(), 600);
+  }
 
-    this.teamManager.addPoints(team, challenge.points);
-    for (let i = 0; i < container.size; i++) {
-      container.setItem(i, undefined);
-    }
-    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
+  private stopNameRefresh(): void {
+    if (this.nameRefreshHandle === undefined || typeof system.clearRun !== "function") return;
+    system.clearRun(this.nameRefreshHandle);
+    this.nameRefreshHandle = undefined;
+  }
 
-    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§9Azure Architects";
-    this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
+  private refreshChestNames(): void {
+    const dim = this.worldRef.getDimension("overworld");
+    const entries: Array<{ loc?: Vector3; label: string }> = [
+      { loc: this.crimsonChestLocation, label: "§c§lCRIMSON BOUNTY" },
+      { loc: this.azureChestLocation, label: "§9§lAZURE BOUNTY" },
+    ];
 
-    const players = this.worldRef.getAllPlayers();
-    this.audioManager?.playChallengeSounds(players);
-    players.forEach((p) => {
-      this.hudManager?.updateScores(p);
-      this.hudManager?.updateChallenges(p);
+    entries.forEach(({ loc, label }) => {
+      if (!loc) return;
+      try {
+        const block = dim.getBlock(loc);
+        const inventory = block?.getComponent("inventory") as {
+          container?: { setCustomName: (label: string) => void };
+        };
+        inventory?.container?.setCustomName?.(label);
+      } catch (err) {
+        this.debugLogger?.warn("Failed to refresh chest name", loc, err);
+      }
     });
   }
 
