@@ -31,9 +31,8 @@ export class HUDManager {
   completeChallenge(player: Player, challengeIndex: number, challenge: ChallengeRecord, completedByTeam: string): void {
     if (!this.isGameActive()) return;
 
-    const completedBy =
-      completedByTeam === "crimson" ? "§cCrimson" : completedByTeam === "azure" ? "§bAzure" : undefined;
-    const ownerLabel = completedBy ? ` §7(${completedBy}§7)` : " §7(Claimed)";
+    const completedBy = completedByTeam === "crimson" ? "Crimson" : completedByTeam === "azure" ? "Azure" : undefined;
+    const ownerLabel = completedBy ? ` §7(${completedBy})` : " §7(Claimed)";
     const line = `§a✓ ${challenge.name} ${ownerLabel}`;
 
     this.setTitle(player, `update:eslr:chlist${challengeIndex}:${line}`);
@@ -132,10 +131,7 @@ export class HUDManager {
     }
 
     this.playerQueues.get(playerId)!.push(text);
-
-    if (!this.processingPlayers.has(playerId)) {
-      this.processQueue(player);
-    }
+    this.processQueue(player);
   }
 
   private async processQueue(player: Player): Promise<void> {
