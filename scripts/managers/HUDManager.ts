@@ -1,5 +1,6 @@
-import { Player, system, world } from "@minecraft/server";
+import { Player, system } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
+import { PropertyStore } from "./PropertyStore";
 import { ChallengeRecord } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
 import { DYNAMIC_KEYS } from "../config/constants";
@@ -8,13 +9,15 @@ import { DebugLogger } from "./DebugLogger";
 export class HUDManager {
   private playerQueues: Map<string, string[]> = new Map();
   private processingPlayers: Set<string> = new Set();
+  private readonly debugLogger: DebugLogger;
 
   constructor(
-    private readonly worldRef = world,
+    private readonly propertyStore: PropertyStore,
     private readonly configManager: ConfigManager,
-    private readonly teamManager: TeamManager,
-    private readonly debugLogger?: DebugLogger
-  ) {}
+    private readonly teamManager: TeamManager
+  ) {
+    this.debugLogger = new DebugLogger(propertyStore);
+  }
 
   updateTimer(player: Player): void {
     if (!this.isGameActive()) return;
@@ -170,19 +173,16 @@ export class HUDManager {
   }
 
   private isGameActive(): boolean {
-    const active = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.gameActive);
-    return active === true;
+    return this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, false);
   }
 
   private getCurrentRound(): number {
-    const stored = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.currentRound);
-    return typeof stored === "number" ? stored : 1;
+    return this.propertyStore.getNumber(DYNAMIC_KEYS.currentRound, 1);
   }
 
   private getRemainingTicks(): number {
     const roundDuration = this.configManager?.getConfigValue("roundDurationTicks") ?? 0;
-    const startTickRaw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.roundStartTick);
-    const startTick = typeof startTickRaw === "number" ? startTickRaw : system.currentTick;
+    const startTick = this.propertyStore.getNumber(DYNAMIC_KEYS.roundStartTick, system.currentTick);
     const elapsed = Math.max(system.currentTick - startTick, 0);
     return Math.max(roundDuration - elapsed, 0);
   }

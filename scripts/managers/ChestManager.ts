@@ -1,10 +1,10 @@
 import { BlockPermutation, Container, Dimension, Vector3, system, world } from "@minecraft/server";
 import { TeamId } from "../types";
-import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { DYNAMIC_KEYS } from "../config/constants";
+import { PropertyStore } from "./PropertyStore";
 import { ChallengeManager, ChallengeRecord } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
 import { AudioManager } from "./AudioManager";
-import { HUDManager } from "./HUDManager";
 import { DebugLogger } from "./DebugLogger";
 import { removeColorCode } from "../utils/text";
 
@@ -15,22 +15,22 @@ export class ChestManager {
   private monitorHandle?: number;
   private nameRefreshHandle?: number;
   private didInit = false;
+  private readonly debugLogger: DebugLogger;
 
   constructor(
-    private readonly worldRef = world,
+    private readonly propertyStore: PropertyStore,
     private readonly challengeManager: ChallengeManager,
     private readonly teamManager: TeamManager,
-    private readonly audioManager?: AudioManager,
-    private readonly hudManager?: HUDManager,
-    private readonly debugLogger?: DebugLogger
+    private readonly audioManager?: AudioManager
   ) {
+    this.debugLogger = new DebugLogger(propertyStore);
     this.registerProtection();
     this.deferLoadLocations();
   }
 
   placeChests(centerLocation: Vector3, dimension?: Dimension): void {
     this.spawnLocation = centerLocation;
-    const dim = dimension ?? this.worldRef.getDimension("overworld");
+    const dim = dimension ?? world.getDimension("overworld");
     const crimsonLoc = centerLocation
       ? { x: centerLocation.x - 3, y: centerLocation.y, z: centerLocation.z }
       : undefined;
@@ -77,7 +77,7 @@ export class ChestManager {
   clearChest(team: TeamId): void {
     const loc = this.getChestLocation(team);
     if (!loc) return;
-    const dim = this.worldRef.getDimension("overworld");
+    const dim = world.getDimension("overworld");
     const container = this.getContainerAt(dim, loc);
     if (!container) return;
     for (let i = 0; i < container.size; i++) {
@@ -90,9 +90,9 @@ export class ChestManager {
     this.crimsonChestLocation = undefined;
     this.azureChestLocation = undefined;
     this.spawnLocation = undefined;
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestCrimsonLocation, "{}");
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestAzureLocation, "{}");
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.spawnLocation, "{}");
+    this.propertyStore.setString(DYNAMIC_KEYS.chestCrimsonLocation, "{}");
+    this.propertyStore.setString(DYNAMIC_KEYS.chestAzureLocation, "{}");
+    this.propertyStore.setString(DYNAMIC_KEYS.spawnLocation, "{}");
     this.stopNameRefresh();
     this.debugLogger?.log("Cleared stored chest and spawn locations");
   }
@@ -111,7 +111,7 @@ export class ChestManager {
   }
 
   private deferLoadLocations(): void {
-    const anyWorld = this.worldRef as unknown as {
+    const anyWorld = world as unknown as {
       afterEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
       beforeEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
     };
@@ -136,21 +136,21 @@ export class ChestManager {
   }
 
   private registerProtection(): void {
-    this.worldRef.beforeEvents.playerBreakBlock.subscribe((event) => {
+    world.beforeEvents.playerBreakBlock.subscribe((event) => {
       if (this.isProtectedLocation(event.block.location)) {
         event.cancel = true;
         event.player.sendMessage("§cThis chest is protected!");
       }
     });
 
-    this.worldRef.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+    world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
       const loc = event.block.location;
       const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, loc);
       const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, loc);
       if (!isCrimson && !isAzure) return;
       this.debugLogger?.log(`[ChestManager] Player attempted to interact with chest at ${JSON.stringify(loc)}`);
 
-      const teamsFormed = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.teamsFormed) === true;
+      const teamsFormed = this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
       if (!teamsFormed) return;
 
       const playerTeam = this.teamManager.getPlayerTeam(event.player);
@@ -169,7 +169,7 @@ export class ChestManager {
       }
     });
 
-    this.worldRef.beforeEvents.explosion.subscribe((event) => {
+    world.beforeEvents.explosion.subscribe((event) => {
       const protectedLocs = [this.crimsonChestLocation, this.azureChestLocation].filter(Boolean) as Vector3[];
       const remaining = event
         .getImpactedBlocks()
@@ -190,40 +190,22 @@ export class ChestManager {
   }
 
   private persistLocations(): void {
-    const crimsonPayload = JSON.stringify(this.crimsonChestLocation ?? {});
-    const azurePayload = JSON.stringify(this.azureChestLocation ?? {});
-    const spawnPayload = JSON.stringify(this.spawnLocation ?? {});
-
-    if (crimsonPayload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestCrimsonLocation, crimsonPayload);
-    }
-    if (azurePayload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.chestAzureLocation, azurePayload);
-    }
-    if (spawnPayload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.spawnLocation, spawnPayload);
-    }
+    this.propertyStore.setJSON(DYNAMIC_KEYS.chestCrimsonLocation, this.crimsonChestLocation ?? {});
+    this.propertyStore.setJSON(DYNAMIC_KEYS.chestAzureLocation, this.azureChestLocation ?? {});
+    this.propertyStore.setJSON(DYNAMIC_KEYS.spawnLocation, this.spawnLocation ?? {});
   }
 
   private loadLocationsFromProperties(): void {
-    this.crimsonChestLocation = this.parseLocation(DYNAMIC_KEYS.chestCrimsonLocation);
-    this.azureChestLocation = this.parseLocation(DYNAMIC_KEYS.chestAzureLocation);
-    this.spawnLocation = this.parseLocation(DYNAMIC_KEYS.spawnLocation);
+    this.crimsonChestLocation = this.propertyStore.getJSON<Vector3>(
+      DYNAMIC_KEYS.chestCrimsonLocation,
+      undefined as any
+    );
+    this.azureChestLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.chestAzureLocation, undefined as any);
+    this.spawnLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.spawnLocation, undefined as any);
   }
 
   private parseLocation(key: string): Vector3 | undefined {
-    const raw = this.worldRef.getDynamicProperty(key);
-    if (typeof raw !== "string") return undefined;
-    try {
-      const parsed = JSON.parse(raw) as Partial<Vector3>;
-      if (typeof parsed.x === "number" && typeof parsed.y === "number" && typeof parsed.z === "number") {
-        return { x: parsed.x, y: parsed.y, z: parsed.z };
-      }
-      return undefined;
-    } catch (err) {
-      this.debugLogger?.warn("Failed to parse location property", key, err);
-      return undefined;
-    }
+    return this.propertyStore.getJSON<Vector3>(key, undefined as any);
   }
 
   private placeChestBlock(dimension: Dimension, location: Vector3, name: string, facing: "east" | "west"): void {
@@ -243,10 +225,9 @@ export class ChestManager {
   }
 
   private pollChests(): void {
-    const active = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.gameActive);
-    if (!active) return;
+    if (!this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, false)) return;
 
-    const dim = this.worldRef.getDimension("overworld");
+    const dim = world.getDimension("overworld");
     const challenges = this.challengeManager.getAvailableChallenges();
     if (!challenges.length) return;
 
@@ -280,7 +261,7 @@ export class ChestManager {
   }
 
   private refreshChestNames(): void {
-    const dim = this.worldRef.getDimension("overworld");
+    const dim = world.getDimension("overworld");
     const entries: Array<{ loc?: Vector3; label: string }> = [
       { loc: this.crimsonChestLocation, label: "§c§lCRIMSON BOUNTY" },
       { loc: this.azureChestLocation, label: "§b§lAZURE BOUNTY" },

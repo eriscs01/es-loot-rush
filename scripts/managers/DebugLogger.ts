@@ -1,15 +1,15 @@
-import { world } from "@minecraft/server";
 import { DYNAMIC_KEYS } from "../config/constants";
+import { PropertyStore } from "./PropertyStore";
 
 export class DebugLogger {
-  constructor(private readonly worldRef = world) {}
+  constructor(private readonly propertyStore: PropertyStore) {}
 
   isEnabled(): boolean {
-    return this.worldRef.getDynamicProperty(DYNAMIC_KEYS.debugMode) === true;
+    return this.propertyStore.getBoolean(DYNAMIC_KEYS.debugMode, false);
   }
 
   setEnabled(flag: boolean): void {
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.debugMode, flag);
+    this.propertyStore.setBoolean(DYNAMIC_KEYS.debugMode, flag);
     this.log(`Debug mode ${flag ? "enabled" : "disabled"}`);
   }
 

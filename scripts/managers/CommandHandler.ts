@@ -18,23 +18,26 @@ import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
 import { TeamId } from "../types";
 import { DebugLogger } from "./DebugLogger";
+import { PropertyStore } from "./PropertyStore";
 
 export class CommandHandler {
+  private readonly debugLogger: DebugLogger;
+
   constructor(
+    private readonly propertyStore: PropertyStore,
     private readonly gameStateManager: GameStateManager,
     private readonly teamManager: TeamManager,
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
-    private readonly audioManager: AudioManager,
-    private readonly debugLogger: DebugLogger
-  ) {}
+    private readonly audioManager: AudioManager
+  ) {
+    this.debugLogger = new DebugLogger(propertyStore);
+  }
 
   registerCommands(): void {
     system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
-      // Define valid enum values
-
       customCommandRegistry.registerCommand(
         {
           name: "lr:teamup",
@@ -172,26 +175,6 @@ export class CommandHandler {
           cheatsRequired: false,
         },
         this.handleConfigReset.bind(this)
-      );
-
-      customCommandRegistry.registerCommand(
-        {
-          name: "lr:backup",
-          description: "Create a backup of Loot Rush state",
-          permissionLevel: CommandPermissionLevel.GameDirectors,
-          cheatsRequired: false,
-        },
-        this.handleBackup.bind(this)
-      );
-
-      customCommandRegistry.registerCommand(
-        {
-          name: "lr:restore",
-          description: "Restore Loot Rush state from backup",
-          permissionLevel: CommandPermissionLevel.GameDirectors,
-          cheatsRequired: false,
-        },
-        this.handleRestore.bind(this)
       );
     });
   }
@@ -409,24 +392,6 @@ export class CommandHandler {
     this.chestManager.monitorChests();
     void origin;
     return { status: CustomCommandStatus.Success, message: "Game resumed." };
-  }
-
-  handleBackup(origin: CustomCommandOrigin): CustomCommandResult {
-    const { saved, timestamp } = this.gameStateManager.backupState();
-    void origin;
-    return {
-      status: CustomCommandStatus.Success,
-      message: `§aBackup saved (${saved} props) at tick ${timestamp}.`,
-    };
-  }
-
-  handleRestore(origin: CustomCommandOrigin): CustomCommandResult {
-    const { restored, timestamp } = this.gameStateManager.restoreState();
-    void origin;
-    return {
-      status: CustomCommandStatus.Success,
-      message: `§aState restored from backup (tick ${timestamp}, ${restored} props).`,
-    };
   }
 
   handleDebugToggle(origin: CustomCommandOrigin, enabled: boolean): CustomCommandResult {

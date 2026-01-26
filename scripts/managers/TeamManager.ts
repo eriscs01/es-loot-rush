@@ -1,21 +1,20 @@
 import { Player, system, Vector3, world } from "@minecraft/server";
-import { ConfigManager } from "./ConfigManager";
-import { DebugLogger } from "./DebugLogger";
+import { PropertyStore } from "./PropertyStore";
 import { TeamId } from "../types";
-import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { DYNAMIC_KEYS } from "../config/constants";
 import { removeColorCode } from "../utils/text";
+import { DebugLogger } from "./DebugLogger";
 
 export class TeamManager {
   private playerTeamCache = new Map<string, TeamId>();
   private crimsonPlayers: string[] = [];
   private azurePlayers: string[] = [];
   private spawnHandler?: (event: { player: Player }) => void;
+  private readonly debugLogger: DebugLogger;
 
-  constructor(
-    private readonly worldRef = world,
-    private readonly configManager: ConfigManager,
-    private readonly debugLogger?: DebugLogger
-  ) {}
+  constructor(private readonly propertyStore: PropertyStore) {
+    this.debugLogger = new DebugLogger(propertyStore);
+  }
 
   registerJoinHandlers(): void {
     if (this.spawnHandler) return;
@@ -43,7 +42,7 @@ export class TeamManager {
 
     const spawnHandler = this.spawnHandler.bind(this);
     system.run(() => {
-      this.worldRef.afterEvents.playerSpawn.subscribe(spawnHandler);
+      world.afterEvents.playerSpawn.subscribe(spawnHandler);
     });
   }
 
@@ -51,7 +50,7 @@ export class TeamManager {
     if (!this.spawnHandler) return;
     const spawnHandler = this.spawnHandler;
     system.run(() => {
-      this.worldRef.afterEvents.playerSpawn.unsubscribe(spawnHandler);
+      world.afterEvents.playerSpawn.unsubscribe(spawnHandler);
     });
     this.spawnHandler = undefined;
   }
@@ -78,8 +77,8 @@ export class TeamManager {
     this.playerTeamCache.clear();
     this.crimsonPlayers = [];
     this.azurePlayers = [];
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.crimsonPlayers, "[]");
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.azurePlayers, "[]");
+    this.propertyStore.setString(DYNAMIC_KEYS.crimsonPlayers, "[]");
+    this.propertyStore.setString(DYNAMIC_KEYS.azurePlayers, "[]");
     this.debugLogger?.log("Cleared teams and rosters");
   }
 
@@ -115,34 +114,21 @@ export class TeamManager {
   }
 
   private isTeamsFormed(): boolean {
-    const formed = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.teamsFormed);
-    return formed === true;
+    return this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
   }
 
   private getStoredSpawn(): Vector3 | undefined {
-    const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.spawnLocation);
-    if (typeof raw !== "string") return undefined;
-    try {
-      const parsed = JSON.parse(raw) as Partial<Vector3>;
-      if (typeof parsed.x === "number" && typeof parsed.y === "number" && typeof parsed.z === "number") {
-        return { x: parsed.x, y: parsed.y, z: parsed.z };
-      }
-    } catch (err) {
-      this.debugLogger?.warn("Failed to parse stored spawn", err);
-      return undefined;
-    }
-    return undefined;
+    return this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.spawnLocation, undefined as any);
   }
 
   getTeamScore(team: TeamId): number {
-    const key = team === "crimson" ? "lootRush:crimsonScore" : "lootRush:azureScore";
-    const value = this.worldRef.getDynamicProperty(key);
-    return typeof value === "number" ? value : 0;
+    const key = team === "crimson" ? DYNAMIC_KEYS.crimsonScore : DYNAMIC_KEYS.azureScore;
+    return this.propertyStore.getNumber(key, 0);
   }
 
   setTeamScore(team: TeamId, points: number): void {
-    const key = team === "crimson" ? "lootRush:crimsonScore" : "lootRush:azureScore";
-    this.worldRef.setDynamicProperty(key, points);
+    const key = team === "crimson" ? DYNAMIC_KEYS.crimsonScore : DYNAMIC_KEYS.azureScore;
+    this.propertyStore.setNumber(key, points);
     this.debugLogger?.log(`Set ${team} score to ${points}`);
   }
 
@@ -162,16 +148,8 @@ export class TeamManager {
   }
 
   loadRostersFromProperties(): void {
-    const crimsonRaw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.crimsonPlayers);
-    const azureRaw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.azurePlayers);
-    try {
-      this.crimsonPlayers = typeof crimsonRaw === "string" ? (JSON.parse(crimsonRaw) as string[]) : [];
-      this.azurePlayers = typeof azureRaw === "string" ? (JSON.parse(azureRaw) as string[]) : [];
-    } catch (err) {
-      this.debugLogger?.warn("Failed to parse team rosters", err);
-      this.crimsonPlayers = [];
-      this.azurePlayers = [];
-    }
+    this.crimsonPlayers = this.propertyStore.getJSON<string[]>(DYNAMIC_KEYS.crimsonPlayers, []);
+    this.azurePlayers = this.propertyStore.getJSON<string[]>(DYNAMIC_KEYS.azurePlayers, []);
 
     this.playerTeamCache.clear();
     this.crimsonPlayers.forEach((id) => this.playerTeamCache.set(removeColorCode(id), "crimson"));
@@ -180,7 +158,7 @@ export class TeamManager {
 
   setSpawnPointForPlayer(player: Player, location: Vector3): void {
     try {
-      const dimension = this.worldRef.getDimension("overworld");
+      const dimension = world.getDimension("overworld");
       player.setSpawnPoint({ ...location, dimension });
     } catch (err) {
       this.debugLogger?.warn("Failed to set spawn point", player.nameTag, err);
@@ -192,14 +170,8 @@ export class TeamManager {
   }
 
   private persistRosters(): void {
-    const crimsonPayload = JSON.stringify(this.crimsonPlayers);
-    const azurePayload = JSON.stringify(this.azurePlayers);
-    if (crimsonPayload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.crimsonPlayers, crimsonPayload);
-    }
-    if (azurePayload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.azurePlayers, azurePayload);
-    }
+    this.propertyStore.setJSON(DYNAMIC_KEYS.crimsonPlayers, this.crimsonPlayers);
+    this.propertyStore.setJSON(DYNAMIC_KEYS.azurePlayers, this.azurePlayers);
   }
 
   resetPlayerNameTag(player: Player): void {

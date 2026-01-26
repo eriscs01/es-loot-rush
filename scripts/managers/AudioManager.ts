@@ -1,11 +1,13 @@
-import { Player, system, world } from "@minecraft/server";
+import { Player, system } from "@minecraft/server";
 import { DebugLogger } from "./DebugLogger";
+import { PropertyStore } from "./PropertyStore";
 
 export class AudioManager {
-  constructor(
-    private readonly worldRef = world,
-    private readonly debugLogger?: DebugLogger
-  ) {}
+  private readonly debugLogger: DebugLogger;
+
+  constructor(propertyStore: PropertyStore) {
+    this.debugLogger = new DebugLogger(propertyStore);
+  }
 
   private readonly timerWarningSounds: {
     at60: { soundId: string; pitch?: number };
@@ -74,6 +76,5 @@ export class AudioManager {
     } catch (err) {
       this.debugLogger?.warn("Failed to play sound", soundId, player.nameTag, err);
     }
-    void this.worldRef;
   }
 }

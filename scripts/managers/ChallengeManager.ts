@@ -1,7 +1,8 @@
 import { Container, ItemStack, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
+import { PropertyStore } from "./PropertyStore";
 import { CHALLENGES } from "../config/challenges";
-import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { DYNAMIC_KEYS } from "../config/constants";
 import { ANY_VARIANTS } from "../config/variants";
 import { TeamId } from "../types";
 import { TeamManager } from "./TeamManager";
@@ -30,16 +31,17 @@ export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
   private activeChallenges: ChallengeRecord[] = [];
   private completedChallenges: ChallengeRecord[] = [];
+  private readonly debugLogger: DebugLogger;
 
   constructor(
+    private readonly propertyStore: PropertyStore,
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager: AudioManager,
-    private readonly worldRef = world,
-    private readonly debugLogger?: DebugLogger
+    private readonly audioManager: AudioManager
   ) {
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
+    this.debugLogger = new DebugLogger(propertyStore);
   }
 
   setChallengePool(pool: ChallengeDefinition[]): void {
@@ -142,9 +144,9 @@ export class ChallengeManager {
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}`);
 
     const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
-    this.worldRef.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
+    world.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
 
-    const players = this.worldRef.getAllPlayers();
+    const players = world.getAllPlayers();
     const winners = players.filter((p) => this.teamManager.getPlayerTeam(p) === team);
     const others = players.filter((p) => {
       const t = this.teamManager.getPlayerTeam(p);
@@ -154,7 +156,7 @@ export class ChallengeManager {
 
     if (chestLocation) {
       try {
-        const dim = this.worldRef.getDimension("overworld");
+        const dim = world.getDimension("overworld");
         dim.spawnParticle("minecraft:totem_particle", chestLocation);
       } catch (err) {
         this.debugLogger?.warn("Failed to spawn completion particle", err);
@@ -182,8 +184,8 @@ export class ChallengeManager {
   resetChallenges(): void {
     this.activeChallenges = [];
     this.completedChallenges = [];
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
-    this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
+    this.propertyStore.setString(DYNAMIC_KEYS.activeChallenges, "[]");
+    this.propertyStore.setString(DYNAMIC_KEYS.completedChallenges, "[]");
   }
 
   validateChallenge(challenge: ChallengeDefinition, items: unknown): boolean {
@@ -194,16 +196,7 @@ export class ChallengeManager {
   }
 
   getActiveChallenges(): ChallengeRecord[] {
-    const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.activeChallenges);
-    if (typeof raw === "string") {
-      try {
-        const parsed = JSON.parse(raw) as ChallengeRecord[];
-        this.activeChallenges = parsed;
-      } catch (err) {
-        this.debugLogger?.warn("Failed to parse active challenges", err);
-        this.activeChallenges = [];
-      }
-    }
+    this.activeChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.activeChallenges, []);
     return [...this.activeChallenges];
   }
 
@@ -212,31 +205,16 @@ export class ChallengeManager {
   }
 
   getCompletedChallenges(): ChallengeRecord[] {
-    const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.completedChallenges);
-    if (typeof raw === "string") {
-      try {
-        const parsed = JSON.parse(raw) as ChallengeRecord[];
-        this.completedChallenges = parsed;
-      } catch (err) {
-        this.debugLogger?.warn("Failed to parse completed challenges", err);
-        this.completedChallenges = [];
-      }
-    }
+    this.completedChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.completedChallenges, []);
     return [...this.completedChallenges];
   }
 
   private persistActive(): void {
-    const payload = JSON.stringify(this.activeChallenges);
-    if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, payload);
-    }
+    this.propertyStore.setJSON(DYNAMIC_KEYS.activeChallenges, this.activeChallenges);
   }
 
   private persistCompleted(): void {
-    const payload = JSON.stringify(this.completedChallenges);
-    if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-      this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, payload);
-    }
+    this.propertyStore.setJSON(DYNAMIC_KEYS.completedChallenges, this.completedChallenges);
   }
 
   validateDeposit(container: Container, challenge: ChallengeDefinition): boolean {

@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server";
+import { PropertyStore } from "./managers/PropertyStore";
 import { GameStateManager } from "./managers/GameStateManager";
 import { TeamManager } from "./managers/TeamManager";
 import { ChallengeManager } from "./managers/ChallengeManager";
@@ -7,37 +7,36 @@ import { HUDManager } from "./managers/HUDManager";
 import { CommandHandler } from "./managers/CommandHandler";
 import { ConfigManager } from "./managers/ConfigManager";
 import { AudioManager } from "./managers/AudioManager";
-import { DebugLogger } from "./managers/DebugLogger";
 
-const debugLogger = new DebugLogger(world);
-const configManager = new ConfigManager(world, debugLogger);
-const teamManager = new TeamManager(world, configManager, debugLogger);
-const audioManager = new AudioManager(world, debugLogger);
-const hudManager = new HUDManager(world, configManager, teamManager, debugLogger);
-const challengeManager = new ChallengeManager(configManager, teamManager, hudManager, audioManager, world, debugLogger);
-const chestManager = new ChestManager(world, challengeManager, teamManager, audioManager, hudManager, debugLogger);
+const propertyStore = new PropertyStore();
+propertyStore.initialize();
+
+const configManager = new ConfigManager(propertyStore);
+const teamManager = new TeamManager(propertyStore);
+const audioManager = new AudioManager(propertyStore);
+const hudManager = new HUDManager(propertyStore, configManager, teamManager);
+const challengeManager = new ChallengeManager(propertyStore, configManager, teamManager, hudManager, audioManager);
+const chestManager = new ChestManager(propertyStore, challengeManager, teamManager, audioManager);
 
 const gameStateManager = new GameStateManager(
+  propertyStore,
   configManager,
   teamManager,
   challengeManager,
   chestManager,
   hudManager,
-  audioManager,
-  debugLogger,
-  world
+  audioManager
 );
+gameStateManager.initialize();
 
 const commandHandler = new CommandHandler(
+  propertyStore,
   gameStateManager,
   teamManager,
   challengeManager,
   chestManager,
   hudManager,
   configManager,
-  audioManager,
-  debugLogger
+  audioManager
 );
-
-gameStateManager.initialize();
 commandHandler.registerCommands();

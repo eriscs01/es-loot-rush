@@ -1,7 +1,6 @@
-import { world } from "@minecraft/server";
 import { GameConfig } from "../types";
-import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
-import { DebugLogger } from "./DebugLogger";
+import { DYNAMIC_KEYS } from "../config/constants";
+import { PropertyStore } from "./PropertyStore";
 
 const DEFAULT_CONFIG: GameConfig = {
   easyChallengeCount: 3,
@@ -14,38 +13,17 @@ const DEFAULT_CONFIG: GameConfig = {
 export class ConfigManager {
   private config: GameConfig;
 
-  constructor(
-    private readonly worldRef = world,
-    private readonly debugLogger?: DebugLogger
-  ) {
+  constructor(private readonly propertyStore: PropertyStore) {
     this.config = { ...DEFAULT_CONFIG };
   }
 
   loadConfig(): void {
-    const raw = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.config);
-    if (typeof raw !== "string") {
-      this.resetToDefaults();
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as GameConfig;
-      this.config = this.validateConfig(parsed) ? parsed : { ...DEFAULT_CONFIG };
-    } catch (err) {
-      this.debugLogger?.warn("Failed to parse config; resetting to defaults", err);
-      this.resetToDefaults();
-    }
+    const parsed = this.propertyStore.getJSON<GameConfig>(DYNAMIC_KEYS.config, DEFAULT_CONFIG);
+    this.config = this.validateConfig(parsed) ? parsed : { ...DEFAULT_CONFIG };
   }
 
   saveConfig(): void {
-    try {
-      const payload = JSON.stringify(this.config);
-      if (payload.length <= DYNAMIC_PROPERTY_LIMIT_BYTES) {
-        this.worldRef.setDynamicProperty(DYNAMIC_KEYS.config, payload);
-      }
-    } catch (err) {
-      this.debugLogger?.warn("Failed to save config", err);
-    }
+    this.propertyStore.setJSON(DYNAMIC_KEYS.config, this.config);
   }
 
   getConfig(): GameConfig {

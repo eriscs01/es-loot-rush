@@ -14,6 +14,12 @@ export default [
     },
     rules: {
       "minecraft-linting/avoid-unnecessary-command": "error",
+      // Error on unused imports, variables, and parameters
+      "no-unused-vars": ["error", { args: "all", argsIgnorePattern: "^_", vars: "all", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { args: "all", argsIgnorePattern: "^_", vars: "all", varsIgnorePattern: "^_" },
+      ],
     },
   },
 ];

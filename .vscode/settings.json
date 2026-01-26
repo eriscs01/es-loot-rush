@@ -33,5 +33,8 @@
     "zoglin"
   ],
   "editor.tabSize": 2,
-  "eslint.useFlatConfig": true
+  "eslint.useFlatConfig": true,
+  "chat.tools.terminal.autoApprove": {
+    "/^(npx just-scripts|npm run)($| .*)/": true
+  }
 }
