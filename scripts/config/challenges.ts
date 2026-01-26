@@ -457,7 +457,7 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     {
       id: "melon_merchant",
       name: "Melon Merchant (8 Melons)",
-      item: "minecraft:melon",
+      item: "minecraft:melon_block",
       count: 8,
       points: 28,
       difficulty: "medium",
