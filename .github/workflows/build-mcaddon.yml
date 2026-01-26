@@ -36,13 +36,6 @@ jobs:
       - name: Build production mcaddon
         run: npm run mcaddon:production
 
-      - name: Upload mcaddon artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ES-Loot-Rush-mcaddon
-          path: dist/packages/*.mcaddon
-          retention-days: 90
-
       - name: Create Release (generate notes)
         id: create_release
         uses: actions/create-release@v1
@@ -59,7 +52,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/packages/*.mcaddon
+          asset_path: dist/packages/ES-Loot-Rush.mcaddon
           asset_name: ES-Loot-Rush.mcaddon
           asset_content_type: application/octet-stream
         env:
