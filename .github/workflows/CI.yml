@@ -9,6 +9,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+      MINECRAFT_PRODUCT: ${{ vars.MINECRAFT_PRODUCT }}
     
     steps:
       - uses: actions/checkout@v4
