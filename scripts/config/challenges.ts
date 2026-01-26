@@ -5,7 +5,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
   easy: [
     {
       id: "stone_age_stockpile",
-      name: "Stone Age Stockpile (32 Cobblestone)",
+      title: "Stone Age Stockpile",
+      name: "32 Cobblestone",
       item: MinecraftItemTypes.Cobblestone,
       count: 32,
       points: 10,
@@ -13,7 +14,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "lumberjacks_load",
-      name: "Lumberjack's Load (16 Logs, any wood)",
+      title: "Lumberjack's Load",
+      name: "16 Logs, any wood",
       item: MinecraftItemTypes.OakLog,
       count: 16,
       points: 12,
@@ -22,7 +24,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "farmers_bounty",
-      name: "Farmer's Bounty (8 Bread)",
+      title: "Farmer's Bounty",
+      name: "8 Bread",
       item: MinecraftItemTypes.Bread,
       count: 8,
       points: 15,
@@ -30,7 +33,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "miners_first_strike",
-      name: "Miner's First Strike (8 Coal)",
+      title: "Miner's First Strike",
+      name: "8 Coal",
       item: MinecraftItemTypes.Coal,
       count: 8,
       points: 12,
@@ -38,7 +42,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "wool_gatherer",
-      name: "Wool Gatherer (8 Wool, any color)",
+      title: "Wool Gatherer",
+      name: "8 Wool, any color",
       item: MinecraftItemTypes.WhiteWool,
       count: 8,
       points: 15,
@@ -47,7 +52,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "hunters_feast",
-      name: "Hunter's Feast (8 Cooked Meat, any type)",
+      title: "Hunter's Feast",
+      name: "8 Cooked Meat, any type",
       item: MinecraftItemTypes.CookedBeef,
       count: 8,
       points: 15,
@@ -56,7 +62,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "iron_seeker",
-      name: "Iron Seeker (4 Iron Ore)",
+      title: "Iron Seeker",
+      name: "4 Iron Ore",
       item: MinecraftItemTypes.IronOre,
       count: 4,
       points: 18,
@@ -64,7 +71,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "builders_cache",
-      name: "Builder's Cache (32 Planks, any wood)",
+      title: "Builder's Cache",
+      name: "32 Planks, any wood",
       item: MinecraftItemTypes.OakPlanks,
       count: 32,
       points: 10,
@@ -73,7 +81,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "dirt_digger",
-      name: "Dirt Digger (32 Dirt/Grass Blocks)",
+      title: "Dirt Digger",
+      name: "32 Dirt/Grass Blocks",
       item: MinecraftItemTypes.Dirt,
       count: 32,
       points: 10,
@@ -82,7 +91,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "clay_collector",
-      name: "Clay Collector (8 Clay Balls)",
+      title: "Clay Collector",
+      name: "8 Clay Balls",
       item: MinecraftItemTypes.ClayBall,
       count: 8,
       points: 15,
@@ -90,7 +100,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "sand_hauler",
-      name: "Sand Hauler (16 Sand)",
+      title: "Sand Hauler",
+      name: "16 Sand",
       item: MinecraftItemTypes.Sand,
       count: 16,
       points: 12,
@@ -98,7 +109,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "flower_power",
-      name: "Flower Power (6 Different Flowers)",
+      title: "Flower Power",
+      name: "6 Different Flowers",
       item: MinecraftItemTypes.Poppy,
       count: 6,
       points: 18,
@@ -107,7 +119,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "gravel_grab",
-      name: "Gravel Grab (16 Gravel)",
+      title: "Gravel Grab",
+      name: "16 Gravel",
       item: MinecraftItemTypes.Gravel,
       count: 16,
       points: 12,
@@ -115,7 +128,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "bone_collector",
-      name: "Bone Collector (4 Bones)",
+      title: "Bone Collector",
+      name: "4 Bones",
       item: MinecraftItemTypes.Bone,
       count: 4,
       points: 15,
@@ -123,7 +137,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "string_theory",
-      name: "String Theory (6 String)",
+      title: "String Theory",
+      name: "6 String",
       item: MinecraftItemTypes.String,
       count: 6,
       points: 18,
@@ -131,7 +146,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "sugar_rush",
-      name: "Sugar Rush (8 Sugar Cane)",
+      title: "Sugar Rush",
+      name: "8 Sugar Cane",
       item: MinecraftItemTypes.SugarCane,
       count: 8,
       points: 12,
@@ -139,7 +155,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "cactus_collector",
-      name: "Cactus Collector (4 Cactus)",
+      title: "Cactus Collector",
+      name: "4 Cactus",
       item: MinecraftItemTypes.Cactus,
       count: 4,
       points: 15,
@@ -147,7 +164,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "mushroom_hunt",
-      name: "Mushroom Hunt (6 Mushrooms, any type)",
+      title: "Mushroom Hunt",
+      name: "6 Mushrooms, any type",
       item: MinecraftItemTypes.RedMushroom,
       count: 6,
       points: 12,
@@ -156,7 +174,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "feather_collector",
-      name: "Feather Collector (6 Feathers)",
+      title: "Feather Collector",
+      name: "6 Feathers",
       item: MinecraftItemTypes.Feather,
       count: 6,
       points: 15,
@@ -164,7 +183,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "egg_basket",
-      name: "Egg Basket (8 Eggs)",
+      title: "Egg Basket",
+      name: "8 Eggs",
       item: MinecraftItemTypes.Egg,
       count: 8,
       points: 12,
@@ -172,7 +192,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "flint_finder",
-      name: "Flint Finder (4 Flint)",
+      title: "Flint Finder",
+      name: "4 Flint",
       item: MinecraftItemTypes.Flint,
       count: 4,
       points: 15,
@@ -180,7 +201,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "snowball_stockpile",
-      name: "Snowball Stockpile (16 Snowballs)",
+      title: "Snowball Stockpile",
+      name: "16 Snowballs",
       item: MinecraftItemTypes.Snowball,
       count: 16,
       points: 10,
@@ -188,7 +210,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "apple_orchard",
-      name: "Apple Orchard (4 Apples)",
+      title: "Apple Orchard",
+      name: "4 Apples",
       item: MinecraftItemTypes.Apple,
       count: 4,
       points: 18,
@@ -196,7 +219,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "stick_stack",
-      name: "Stick Stack (32 Sticks)",
+      title: "Stick Stack",
+      name: "32 Sticks",
       item: MinecraftItemTypes.Stick,
       count: 32,
       points: 10,
@@ -204,7 +228,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "torch_lighter",
-      name: "Torch Lighter (16 Torches)",
+      title: "Torch Lighter",
+      name: "16 Torches",
       item: MinecraftItemTypes.Torch,
       count: 16,
       points: 12,
@@ -212,7 +237,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "charcoal_burner",
-      name: "Charcoal Burner (8 Charcoal)",
+      title: "Charcoal Burner",
+      name: "8 Charcoal",
       item: MinecraftItemTypes.Charcoal,
       count: 8,
       points: 15,
@@ -220,7 +246,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "kelp_harvest",
-      name: "Kelp Harvest (16 Kelp)",
+      title: "Kelp Harvest",
+      name: "16 Kelp",
       item: MinecraftItemTypes.Kelp,
       count: 16,
       points: 15,
@@ -228,7 +255,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "bamboo_gatherer",
-      name: "Bamboo Gatherer (16 Bamboo)",
+      title: "Bamboo Gatherer",
+      name: "16 Bamboo",
       item: MinecraftItemTypes.Bamboo,
       count: 16,
       points: 12,
@@ -236,7 +264,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "paper_maker",
-      name: "Paper Maker (8 Paper)",
+      title: "Paper Maker",
+      name: "8 Paper",
       item: MinecraftItemTypes.Paper,
       count: 8,
       points: 15,
@@ -244,7 +273,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "sapling_collector",
-      name: "Sapling Collector (4 Saplings, any type)",
+      title: "Sapling Collector",
+      name: "4 Saplings, any type",
       item: MinecraftItemTypes.OakSapling,
       count: 4,
       points: 12,
@@ -253,7 +283,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "wheat_harvest",
-      name: "Wheat Harvest (16 Wheat)",
+      title: "Wheat Harvest",
+      name: "16 Wheat",
       item: MinecraftItemTypes.Wheat,
       count: 16,
       points: 15,
@@ -261,7 +292,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "potato_picker",
-      name: "Potato Picker (8 Potatoes)",
+      title: "Potato Picker",
+      name: "8 Potatoes",
       item: MinecraftItemTypes.Potato,
       count: 8,
       points: 12,
@@ -269,7 +301,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "carrot_collector",
-      name: "Carrot Collector (8 Carrots)",
+      title: "Carrot Collector",
+      name: "8 Carrots",
       item: MinecraftItemTypes.Carrot,
       count: 8,
       points: 12,
@@ -277,7 +310,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "beetroot_gatherer",
-      name: "Beetroot Gatherer (8 Beetroots)",
+      title: "Beetroot Gatherer",
+      name: "8 Beetroots",
       item: MinecraftItemTypes.Beetroot,
       count: 8,
       points: 15,
@@ -285,7 +319,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "pumpkin_harvest",
-      name: "Pumpkin Harvest (2 Pumpkins)",
+      title: "Pumpkin Harvest",
+      name: "2 Pumpkins",
       item: MinecraftItemTypes.Pumpkin,
       count: 2,
       points: 15,
@@ -293,7 +328,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "melon_slice_stack",
-      name: "Melon Slice Stack (8 Melon Slices)",
+      title: "Melon Slice Stack",
+      name: "8 Melon Slices",
       item: MinecraftItemTypes.MelonSlice,
       count: 8,
       points: 12,
@@ -301,7 +337,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "vine_climber",
-      name: "Vine Climber (8 Vines)",
+      title: "Vine Climber",
+      name: "8 Vines",
       item: MinecraftItemTypes.Vine,
       count: 8,
       points: 15,
@@ -309,7 +346,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "lily_pad_collector",
-      name: "Lily Pad Collector (4 Lily Pads)",
+      title: "Lily Pad Collector",
+      name: "4 Lily Pads",
       item: MinecraftItemTypes.Waterlily,
       count: 4,
       points: 12,
@@ -317,7 +355,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "sweet_berries",
-      name: "Sweet Berries (8 Sweet Berries)",
+      title: "Sweet Berries",
+      name: "8 Sweet Berries",
       item: MinecraftItemTypes.SweetBerries,
       count: 8,
       points: 15,
@@ -325,7 +364,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "glow_berries",
-      name: "Glow Berries (6 Glow Berries)",
+      title: "Glow Berries",
+      name: "6 Glow Berries",
       item: MinecraftItemTypes.GlowBerries,
       count: 6,
       points: 18,
@@ -333,7 +373,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "crafting_table_maker",
-      name: "Crafting Table Maker (2 Crafting Tables)",
+      title: "Crafting Table Maker",
+      name: "2 Crafting Tables",
       item: MinecraftItemTypes.CraftingTable,
       count: 2,
       points: 10,
@@ -341,7 +382,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "chest_builder",
-      name: "Chest Builder (2 Chests)",
+      title: "Chest Builder",
+      name: "2 Chests",
       item: MinecraftItemTypes.Chest,
       count: 2,
       points: 12,
@@ -349,7 +391,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "fence_crafter",
-      name: "Fence Crafter (16 Fences, any wood)",
+      title: "Fence Crafter",
+      name: "16 Fences, any wood",
       item: MinecraftItemTypes.OakFence,
       count: 16,
       points: 12,
@@ -358,7 +401,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "door_maker",
-      name: "Door Maker (3 Doors, any wood)",
+      title: "Door Maker",
+      name: "3 Doors, any wood",
       item: MinecraftItemTypes.AcaciaDoor,
       count: 3,
       points: 10,
@@ -369,7 +413,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
   medium: [
     {
       id: "creepers_gift",
-      name: "Creeper's Gift (4 Gunpowder)",
+      title: "Creeper's Gift",
+      name: "4 Gunpowder",
       item: MinecraftItemTypes.Gunpowder,
       count: 4,
       points: 35,
@@ -377,7 +422,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "endermans_pearls",
-      name: "Enderman's Pearls (3 Ender Pearls)",
+      title: "Enderman's Pearls",
+      name: "3 Ender Pearls",
       item: MinecraftItemTypes.EnderPearl,
       count: 3,
       points: 40,
@@ -385,7 +431,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "spiders_silk",
-      name: "Spider's Silk (4 Spider Eyes)",
+      title: "Spider's Silk",
+      name: "4 Spider Eyes",
       item: MinecraftItemTypes.SpiderEye,
       count: 4,
       points: 30,
@@ -393,7 +440,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "iron_forged",
-      name: "Iron Forged (2 Iron Blocks)",
+      title: "Iron Forged",
+      name: "2 Iron Blocks",
       item: MinecraftItemTypes.IronBlock,
       count: 2,
       points: 32,
@@ -401,7 +449,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "diamond_toolsmith",
-      name: "Diamond Toolsmith (1 Diamond Pickaxe)",
+      title: "Diamond Toolsmith",
+      name: "1 Diamond Pickaxe",
       item: MinecraftItemTypes.DiamondPickaxe,
       count: 1,
       points: 40,
@@ -409,7 +458,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "librarians_pride",
-      name: "Librarian's Pride (4 Bookshelves)",
+      title: "Librarian's Pride",
+      name: "4 Bookshelves",
       item: MinecraftItemTypes.Bookshelf,
       count: 4,
       points: 35,
@@ -417,7 +467,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "redstone_engineer",
-      name: "Redstone Engineer (16 Redstone Dust)",
+      title: "Redstone Engineer",
+      name: "16 Redstone Dust",
       item: MinecraftItemTypes.Redstone,
       count: 16,
       points: 30,
@@ -425,7 +476,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "golden_ingots",
-      name: "Golden Ingots (2 Gold Ingots)",
+      title: "Golden Ingots",
+      name: "2 Gold Ingots",
       item: MinecraftItemTypes.GoldIngot,
       count: 2,
       points: 38,
@@ -433,7 +485,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "slime_hunter",
-      name: "Slime Hunter (2 Slimeballs)",
+      title: "Slime Hunter",
+      name: "2 Slimeballs",
       item: MinecraftItemTypes.SlimeBall,
       count: 2,
       points: 42,
@@ -441,7 +494,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "enchanters_start",
-      name: "Enchanter's Start (1 Enchanting Table)",
+      title: "Enchanter's Start",
+      name: "1 Enchanting Table",
       item: MinecraftItemTypes.EnchantingTable,
       count: 1,
       points: 45,
@@ -449,7 +503,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "treasure_map",
-      name: "Treasure Map (1 Buried Treasure Map)",
+      title: "Treasure Map",
+      name: "1 Buried Treasure Map",
       item: MinecraftItemTypes.FilledMap,
       count: 1,
       points: 40,
@@ -457,7 +512,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "melon_merchant",
-      name: "Melon Merchant (8 Melons)",
+      title: "Melon Merchant",
+      name: "8 Melons",
       item: MinecraftItemTypes.MelonBlock,
       count: 8,
       points: 28,
@@ -465,7 +521,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "pumpkin_patch",
-      name: "Pumpkin Patch (4 Carved Pumpkins)",
+      title: "Pumpkin Patch",
+      name: "4 Carved Pumpkins",
       item: MinecraftItemTypes.CarvedPumpkin,
       count: 4,
       points: 30,
@@ -473,7 +530,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "leather_worker",
-      name: "Leather Worker (4 Leather)",
+      title: "Leather Worker",
+      name: "4 Leather",
       item: MinecraftItemTypes.Leather,
       count: 4,
       points: 32,
@@ -481,7 +539,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "phantom_membrane",
-      name: "Phantom Membrane (1 Phantom Membrane)",
+      title: "Phantom Membrane",
+      name: "1 Phantom Membrane",
       item: MinecraftItemTypes.PhantomMembrane,
       count: 1,
       points: 45,
@@ -489,7 +548,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "cocoa_farmer",
-      name: "Cocoa Farmer (8 Cocoa Beans)",
+      title: "Cocoa Farmer",
+      name: "8 Cocoa Beans",
       item: MinecraftItemTypes.CocoaBeans,
       count: 8,
       points: 35,
@@ -497,7 +557,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "ink_sac_collector",
-      name: "Ink Sac Collector (4 Ink Sacs)",
+      title: "Ink Sac Collector",
+      name: "4 Ink Sacs",
       item: MinecraftItemTypes.InkSac,
       count: 4,
       points: 30,
@@ -505,7 +566,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "lapis_miner",
-      name: "Lapis Miner (8 Lapis Lazuli)",
+      title: "Lapis Miner",
+      name: "8 Lapis Lazuli",
       item: MinecraftItemTypes.LapisLazuli,
       count: 8,
       points: 32,
@@ -513,7 +575,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "dye_collection",
-      name: "Dye Collection (6 Different Dyes)",
+      title: "Dye Collection",
+      name: "6 Different Dyes",
       item: MinecraftItemTypes.RedDye,
       count: 6,
       points: 35,
@@ -522,7 +585,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "obsidian_harvest",
-      name: "Obsidian Harvest (3 Obsidian)",
+      title: "Obsidian Harvest",
+      name: "3 Obsidian",
       item: MinecraftItemTypes.Obsidian,
       count: 3,
       points: 42,
@@ -530,7 +594,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "arrow_crafter",
-      name: "Arrow Crafter (16 Arrows)",
+      title: "Arrow Crafter",
+      name: "16 Arrows",
       item: MinecraftItemTypes.Arrow,
       count: 16,
       points: 30,
@@ -538,7 +603,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "prismarine_collector",
-      name: "Prismarine Collector (8 Prismarine Shards)",
+      title: "Prismarine Collector",
+      name: "8 Prismarine Shards",
       item: MinecraftItemTypes.PrismarineShard,
       count: 8,
       points: 38,
@@ -546,7 +612,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "rabbit_foot",
-      name: "Rabbit Foot (1 Rabbit's Foot)",
+      title: "Rabbit Foot",
+      name: "1 Rabbit's Foot",
       item: MinecraftItemTypes.RabbitFoot,
       count: 1,
       points: 40,
@@ -554,7 +621,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "brick_maker",
-      name: "Brick Maker (16 Bricks)",
+      title: "Brick Maker",
+      name: "16 Bricks",
       item: MinecraftItemTypes.Brick,
       count: 16,
       points: 28,
@@ -562,7 +630,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "sugar_producer",
-      name: "Sugar Producer (16 Sugar)",
+      title: "Sugar Producer",
+      name: "16 Sugar",
       item: MinecraftItemTypes.Sugar,
       count: 16,
       points: 28,
@@ -570,7 +639,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "bowl_crafter",
-      name: "Bowl Crafter (6 Bowls)",
+      title: "Bowl Crafter",
+      name: "6 Bowls",
       item: MinecraftItemTypes.Bowl,
       count: 6,
       points: 30,
@@ -578,7 +648,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "glass_maker",
-      name: "Glass Maker (16 Glass)",
+      title: "Glass Maker",
+      name: "16 Glass",
       item: MinecraftItemTypes.Glass,
       count: 16,
       points: 30,
@@ -586,7 +657,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "dried_kelp_producer",
-      name: "Dried Kelp Producer (16 Dried Kelp)",
+      title: "Dried Kelp Producer",
+      name: "16 Dried Kelp",
       item: MinecraftItemTypes.DriedKelp,
       count: 16,
       points: 32,
@@ -594,7 +666,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "honey_collector",
-      name: "Honey Collector (2 Honey Bottles)",
+      title: "Honey Collector",
+      name: "2 Honey Bottles",
       item: MinecraftItemTypes.HoneyBottle,
       count: 2,
       points: 35,
@@ -602,7 +675,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "honeycomb_gatherer",
-      name: "Honeycomb Gatherer (3 Honeycombs)",
+      title: "Honeycomb Gatherer",
+      name: "3 Honeycombs",
       item: MinecraftItemTypes.Honeycomb,
       count: 3,
       points: 35,
@@ -612,7 +686,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
   hard: [
     {
       id: "enchanted_knowledge",
-      name: "Enchanted Knowledge (1 Enchanted Book)",
+      title: "Enchanted Knowledge",
+      name: "1 Enchanted Book",
       item: MinecraftItemTypes.EnchantedBook,
       count: 1,
       points: 55,
@@ -620,7 +695,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "golden_delicacy",
-      name: "Golden Delicacy (1 Golden Apple)",
+      title: "Golden Delicacy",
+      name: "1 Golden Apple",
       item: MinecraftItemTypes.GoldenApple,
       count: 1,
       points: 60,
@@ -628,7 +704,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "village_vault",
-      name: "Village Vault (8 Emeralds)",
+      title: "Village Vault",
+      name: "8 Emeralds",
       item: MinecraftItemTypes.Emerald,
       count: 8,
       points: 65,
@@ -636,7 +713,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "mob_tamer",
-      name: "Mob Tamer (1 Name Tag)",
+      title: "Mob Tamer",
+      name: "1 Name Tag",
       item: MinecraftItemTypes.NameTag,
       count: 1,
       points: 70,
@@ -644,7 +722,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "music_disc_hunter",
-      name: "Music Disc Hunter (1 Music Disc, any)",
+      title: "Music Disc Hunter",
+      name: "1 Music Disc, any",
       item: MinecraftItemTypes.MusicDiscCat,
       count: 1,
       points: 65,
@@ -653,7 +732,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "diamond_fortune",
-      name: "Diamond Fortune (3 Diamonds)",
+      title: "Diamond Fortune",
+      name: "3 Diamonds",
       item: MinecraftItemTypes.Diamond,
       count: 3,
       points: 60,
@@ -661,7 +741,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "totem_raid",
-      name: "Totem Raid (1 Totem of Undying)",
+      title: "Totem Raid",
+      name: "1 Totem of Undying",
       item: MinecraftItemTypes.TotemOfUndying,
       count: 1,
       points: 75,
@@ -669,7 +750,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "horse_trader",
-      name: "Horse Trader (1 Saddle)",
+      title: "Horse Trader",
+      name: "1 Saddle",
       item: MinecraftItemTypes.Saddle,
       count: 1,
       points: 55,
@@ -677,7 +759,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "oceans_heart",
-      name: "Ocean's Heart (1 Heart of the Sea)",
+      title: "Ocean's Heart",
+      name: "1 Heart of the Sea",
       item: MinecraftItemTypes.HeartOfTheSea,
       count: 1,
       points: 70,
@@ -685,7 +768,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "trident_bearer",
-      name: "Trident Bearer (1 Trident)",
+      title: "Trident Bearer",
+      name: "1 Trident",
       item: MinecraftItemTypes.Trident,
       count: 1,
       points: 75,
@@ -693,7 +777,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "bell_ringer",
-      name: "Bell Ringer (1 Bell)",
+      title: "Bell Ringer",
+      name: "1 Bell",
       item: MinecraftItemTypes.Bell,
       count: 1,
       points: 50,
@@ -701,7 +786,8 @@ export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
     },
     {
       id: "nautilus_shell",
-      name: "Nautilus Shell (1 Nautilus Shell)",
+      title: "Nautilus Shell",
+      name: "1 Nautilus Shell",
       item: MinecraftItemTypes.NautilusShell,
       count: 1,
       points: 60,

@@ -101,7 +101,7 @@ export const ANY_VARIANTS: Record<string, string[]> = {
   ],
   // Doors
   [MinecraftItemTypes.AcaciaDoor]: [
-    MinecraftItemTypes.OakDoor,
+    MinecraftItemTypes.PaleOakDoor,
     MinecraftItemTypes.SpruceDoor,
     MinecraftItemTypes.BirchDoor,
     MinecraftItemTypes.JungleDoor,

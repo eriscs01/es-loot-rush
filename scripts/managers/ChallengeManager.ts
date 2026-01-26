@@ -14,6 +14,7 @@ export type ChallengeState = "available" | "completed" | "locked";
 
 export interface ChallengeDefinition {
   id: string;
+  title: string;
   name: string;
   item: string;
   count: number;
@@ -143,8 +144,9 @@ export class ChallengeManager {
     this.teamManager.addPoints(team, challenge.points);
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}`);
 
+    const challengeLabel = `${challenge.title} (${challenge.name})`;
     const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
-    world.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challenge.name}" (+${challenge.points} pts)`);
+    world.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challengeLabel}" (+${challenge.points} pts)`);
 
     const players = world.getAllPlayers();
     const winners = players.filter((p) => this.teamManager.getPlayerTeam(p) === team);
