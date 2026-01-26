@@ -9,7 +9,7 @@ export default [
       ecmaVersion: "latest",
     },
     plugins: {
-      ts,
+      "@typescript-eslint": ts,
       "minecraft-linting": minecraftLinting,
     },
     rules: {
