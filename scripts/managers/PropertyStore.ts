@@ -12,7 +12,7 @@ export class PropertyStore {
 
   constructor(
     private readonly debugLogger?: DebugLogger,
-    private readonly flushIntervalTicks = 20
+    private readonly flushIntervalTicks = 200
   ) {}
 
   initialize(): void {
