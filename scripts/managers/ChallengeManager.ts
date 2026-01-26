@@ -1,4 +1,4 @@
-import { Container, ItemStack, Vector3, world } from "@minecraft/server";
+import { Container, ItemStack, system, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
 import { CHALLENGES } from "../config/challenges";
@@ -161,9 +161,7 @@ export class ChallengeManager {
       } catch (err) {
         this.debugLogger?.warn("Failed to spawn completion particle", err);
       }
-      for (let i = 0; i < container.size; i++) {
-        container.setItem(i, undefined);
-      }
+      this.removeChallengeItems(container, challenge);
     }
 
     const active = this.getActiveChallenges();
@@ -172,12 +170,16 @@ export class ChallengeManager {
 
     players.forEach((p) => {
       if (challengeIndex !== -1 && challengeIndex < 10) {
-        this.hudManager?.completeChallenge(p, challengeIndex, challenge, team);
+        system.runTimeout(() => {
+          this.hudManager.completeChallenge(p, challengeIndex, challenge, team);
+        }, 5);
       }
-      this.hudManager?.updateScore(p, team, newScore);
+      system.runTimeout(() => {
+        this.hudManager.updateScore(p, team, newScore);
+      }, 10);
     });
 
-    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
+    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
     return true;
   }
 
@@ -218,13 +220,25 @@ export class ChallengeManager {
   }
 
   validateDeposit(container: Container, challenge: ChallengeDefinition): boolean {
+    const filledSlots = container.size - container.emptySlotsCount;
+    if (filledSlots === 0) {
+      this.debugLogger?.debug(`Validation failed for challenge ${challenge.id}; container empty`);
+      return false;
+    }
+
     let total = 0;
-    for (let i = 0; i < container.size; i++) {
-      const item = container.getItem(i);
-      if (!item) continue;
-      if (this.matchesRequirement(item, challenge)) {
-        total += item.amount;
+    let inspectedFilled = 0;
+    const startSlot = container.firstItem() ?? 0;
+
+    for (let i = startSlot; i < container.size && inspectedFilled < filledSlots; i++) {
+      const slot = container.getSlot(i);
+      if (!slot.hasItem()) continue;
+      inspectedFilled++;
+
+      if (this.matchesRequirement(slot.typeId, challenge)) {
+        total += slot.amount;
       }
+
       if (total >= challenge.count) {
         this.debugLogger?.log(`Validation passed for challenge ${challenge.id}; total=${total}`);
         return true;
@@ -234,13 +248,58 @@ export class ChallengeManager {
     return false;
   }
 
-  private matchesRequirement(item: ItemStack, challenge: ChallengeDefinition): boolean {
+  private removeChallengeItems(container: Container, challenge: ChallengeDefinition): void {
+    let remaining = challenge.count;
+    if (container.emptySlotsCount === container.size) return;
+
+    const targetTypes = challenge.variant === "any" ? (ANY_VARIANTS[challenge.item] ?? []) : [challenge.item];
+
+    while (remaining > 0) {
+      let foundIndex: number | undefined;
+
+      for (const typeId of targetTypes) {
+        const probe = new ItemStack(typeId, 1);
+        const idx = container.find(probe);
+        if (idx !== undefined && (foundIndex === undefined || idx < foundIndex)) {
+          foundIndex = idx;
+        }
+      }
+
+      if (foundIndex === undefined) break;
+
+      const slot = container.getSlot(foundIndex);
+      if (!slot.hasItem()) {
+        slot.setItem(undefined);
+        continue;
+      }
+
+      const take = Math.min(slot.amount, remaining);
+      remaining -= take;
+
+      const newAmount = slot.amount - take;
+      if (newAmount > 0) {
+        slot.amount = newAmount;
+      } else {
+        slot.setItem(undefined);
+      }
+    }
+
+    if (remaining > 0) {
+      this.debugLogger?.warn(`Failed to consume full requirement for ${challenge.id}; remaining=${remaining}`);
+    } else {
+      this.debugLogger?.log(`Consumed items for challenge ${challenge.id}`);
+    }
+  }
+
+  private matchesRequirement(item: ItemStack | string, challenge: ChallengeDefinition): boolean {
+    const typeId = typeof item === "string" ? item : item.typeId;
+
     if (challenge.variant === "any") {
       const allowed = ANY_VARIANTS[challenge.item];
       if (allowed) {
-        return allowed.includes(item.typeId);
+        return allowed.includes(typeId);
       }
     }
-    return item.typeId === challenge.item;
+    return typeId === challenge.item;
   }
 }
