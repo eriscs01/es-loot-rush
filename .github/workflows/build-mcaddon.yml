@@ -13,6 +13,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: production
+    env:
+      PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+      MINECRAFT_PRODUCT: ${{ vars.MINECRAFT_PRODUCT }}
 
     steps:
       - name: Checkout repository
