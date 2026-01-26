@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     
     steps:
@@ -17,21 +17,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
-      
-      - name: Run tests
-        run: npm test
+        run: npm ci
       
       - name: Run linter
         run: npm run lint
-
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
+      
+      - name: Run tests
+        run: npm test
       
       - name: Build project
         run: npm run build
