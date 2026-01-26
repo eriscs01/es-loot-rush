@@ -9,6 +9,7 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    environment: development
     env:
       PROJECT_NAME: ${{ vars.PROJECT_NAME }}
       MINECRAFT_PRODUCT: ${{ vars.MINECRAFT_PRODUCT }}
