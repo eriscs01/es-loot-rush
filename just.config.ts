@@ -18,13 +18,15 @@ import {
 import path from "path";
 setupEnvironment(path.resolve(__dirname, ".env"));
 const projectName = getOrThrowFromProcess("PROJECT_NAME");
+const isProduction = argv().production || false;
+
 const bundleTaskOptions: BundleTaskParameters = {
   entryPoint: path.join(__dirname, "./scripts/main.ts"),
   external: ["@minecraft/server", "@minecraft/server-ui"],
   outfile: path.resolve(__dirname, "./dist/scripts/main.js"),
-  minifyWhitespace: false,
-  sourcemap: true,
-  outputSourcemapPath: path.resolve(__dirname, "./dist/debug"),
+  minifyWhitespace: isProduction,
+  sourcemap: !isProduction,
+  outputSourcemapPath: isProduction ? undefined : path.resolve(__dirname, "./dist/debug"),
 };
 const copyTaskOptions: CopyTaskParameters = {
   copyToBehaviorPacks: [`./behavior_packs/${projectName}`],
