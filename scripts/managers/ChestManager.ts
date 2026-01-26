@@ -6,6 +6,7 @@ import { TeamManager } from "./TeamManager";
 import { AudioManager } from "./AudioManager";
 import { HUDManager } from "./HUDManager";
 import { DebugLogger } from "./DebugLogger";
+import { removeColorCode } from "../utils/text";
 
 export class ChestManager {
   private crimsonChestLocation: Vector3 | undefined;
@@ -147,17 +148,24 @@ export class ChestManager {
       const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, loc);
       const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, loc);
       if (!isCrimson && !isAzure) return;
+      this.debugLogger?.log(`[ChestManager] Player attempted to interact with chest at ${JSON.stringify(loc)}`);
 
       const teamsFormed = this.worldRef.getDynamicProperty(DYNAMIC_KEYS.teamsFormed) === true;
       if (!teamsFormed) return;
 
       const playerTeam = this.teamManager.getPlayerTeam(event.player);
       const chestTeam: TeamId | undefined = isCrimson ? "crimson" : isAzure ? "azure" : undefined;
+      this.debugLogger?.log(
+        `[ChestManager] Player: ${removeColorCode(event.player.nameTag ?? event.player.id)}, Player team: ${playerTeam}, Chest team: ${chestTeam}`
+      );
       if (!playerTeam || !chestTeam) return;
       if (playerTeam !== chestTeam) {
         event.cancel = true;
         event.player.sendMessage("§cYou cannot access the other team's chest!");
         this.audioManager?.playAccessDenied([event.player]);
+        this.debugLogger?.log(
+          `[ChestManager] Access denied: player team ${playerTeam} tried to access ${chestTeam} chest at ${JSON.stringify(loc)}`
+        );
       }
     });
 

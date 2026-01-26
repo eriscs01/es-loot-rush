@@ -3,6 +3,7 @@ import { ConfigManager } from "./ConfigManager";
 import { DebugLogger } from "./DebugLogger";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS, DYNAMIC_PROPERTY_LIMIT_BYTES } from "../config/constants";
+import { removeColorCode } from "../utils/text";
 
 export class TeamManager {
   private playerTeamCache = new Map<string, TeamId>();
@@ -72,9 +73,9 @@ export class TeamManager {
 
   assignPlayerToTeam(player: Player, team: TeamId): void {
     const id = player.nameTag ?? player.id;
-    this.playerTeamCache.set(id, team);
+    this.playerTeamCache.set(removeColorCode(id), team);
 
-    this.debugLogger?.log(`Assigned player ${id} to team ${team}`);
+    this.debugLogger?.log(`[TeamManager] Assigned player ${id} to team ${team}`);
 
     if (team === "crimson") {
       this.crimsonPlayers = [...new Set([...this.crimsonPlayers, id])];
@@ -85,7 +86,11 @@ export class TeamManager {
   }
 
   getPlayerTeam(player: Player): TeamId | undefined {
-    const id = player.nameTag ?? player.id;
+    const id = removeColorCode(player.nameTag ?? player.id);
+    const cacheEntries = Array.from(this.playerTeamCache.entries())
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    this.debugLogger?.log(`[TeamManager] playerId ${id}, playerTeamCache contents: { ${cacheEntries} }`);
     return this.playerTeamCache.get(id);
   }
 
@@ -157,8 +162,8 @@ export class TeamManager {
     }
 
     this.playerTeamCache.clear();
-    this.crimsonPlayers.forEach((id) => this.playerTeamCache.set(id, "crimson"));
-    this.azurePlayers.forEach((id) => this.playerTeamCache.set(id, "azure"));
+    this.crimsonPlayers.forEach((id) => this.playerTeamCache.set(removeColorCode(id), "crimson"));
+    this.azurePlayers.forEach((id) => this.playerTeamCache.set(removeColorCode(id), "azure"));
   }
 
   setSpawnPointForPlayer(player: Player, location: Vector3): void {
