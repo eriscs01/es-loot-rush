@@ -129,7 +129,12 @@ export class ChallengeManager {
     return completed;
   }
 
-  handleChallengeCompletion(team: TeamId, challenge: ChallengeRecord, chestLocation?: Vector3): boolean {
+  handleChallengeCompletion(
+    team: TeamId,
+    challenge: ChallengeRecord,
+    container: Container,
+    chestLocation?: Vector3
+  ): boolean {
     const completed = this.completeChallenge(challenge.id, team);
     if (!completed) return false;
 
@@ -154,14 +159,23 @@ export class ChallengeManager {
       } catch (err) {
         this.debugLogger?.warn("Failed to spawn completion particle", err);
       }
+      for (let i = 0; i < container.size; i++) {
+        container.setItem(i, undefined);
+      }
     }
 
     const active = this.getActiveChallenges();
+    const newScore = this.teamManager.getTeamScore(team);
+    const challengeIndex = active.findIndex((c) => c.id === challenge.id);
+
     players.forEach((p) => {
-      this.hudManager?.updateScores(p);
-      this.hudManager?.updateChallenges(p, active);
+      if (challengeIndex !== -1 && challengeIndex < 10) {
+        this.hudManager?.completeChallenge(p, challengeIndex, challenge, team);
+      }
+      this.hudManager?.updateScore(p, team, newScore);
     });
 
+    this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
     return true;
   }
 
@@ -238,7 +252,7 @@ export class ChallengeManager {
         return true;
       }
     }
-    this.debugLogger?.log(`Validation failed for challenge ${challenge.id}; total=${total}`);
+    this.debugLogger?.debug(`Validation failed for challenge ${challenge.id}; total=${total}`);
     return false;
   }
 

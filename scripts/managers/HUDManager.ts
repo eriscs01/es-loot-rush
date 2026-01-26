@@ -6,6 +6,9 @@ import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
 
 export class HUDManager {
+  private playerQueues: Map<string, string[]> = new Map();
+  private processingPlayers: Set<string> = new Set();
+
   constructor(
     private readonly worldRef = world,
     private readonly configManager: ConfigManager,
@@ -15,37 +18,56 @@ export class HUDManager {
 
   updateTimer(player: Player): void {
     if (!this.isGameActive()) return;
+    return;
     const remainingTicks = this.getRemainingTicks();
     const formatted = this.formatTime(remainingTicks);
     this.setTitle(player, `update:eslr:timer:Timer ${formatted}`);
-    this.debugLogger?.log(`HUD timer update for ${player.nameTag}: ${formatted}`);
+    this.debugLogger?.debug(`HUD timer update for ${player.nameTag}: ${formatted}`);
+  }
+
+  completeChallenge(player: Player, challengeIndex: number, challenge: ChallengeRecord, completedByTeam: string): void {
+    if (!this.isGameActive()) return;
+
+    const completedBy =
+      completedByTeam === "crimson" ? "§cCrimson" : completedByTeam === "azure" ? "§bAzure" : undefined;
+    const ownerLabel = completedBy ? ` §7(${completedBy}§7)` : " §7(Claimed)";
+    const line = `§a✓ ${challenge.name} ${ownerLabel}`;
+
+    this.setTitle(player, `update:eslr:chlist${challengeIndex}:${line}`);
+    this.debugLogger?.log(`Challenge ${challenge.id} marked complete in HUD for ${player.nameTag}`);
   }
 
   updateChallenges(player: Player, challenges: ChallengeRecord[]): void {
     if (!this.isGameActive()) return;
 
-    this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
-
     // Header
-    this.setTitle(player, "update:eslr:challengeheader:§6§lCHALLENGES");
+    this.setTitle(player, "update:eslr:chheader:§6§lCHALLENGES");
 
     for (let i = 0; i < 10; i++) {
       const challenge = challenges[i];
       if (!challenge) {
-        this.setTitle(player, `update:eslr:challenge${i}:`);
+        this.setTitle(player, `update:eslr:chlist${i}:`);
         continue;
       }
 
       const claimed = challenge.state === "completed";
       const completedBy =
-        challenge.completedBy === "crimson" ? "§cCrimson" : challenge.completedBy ? "bAzure" : undefined;
+        challenge.completedBy === "crimson" ? "§cCrimson" : challenge.completedBy ? "§bAzure" : undefined;
       const statusPrefix = claimed ? "§a✓" : "§f○";
       const pointsLabel = `§e(${challenge.points}pts)`;
-      const ownerLabel = claimed && completedBy ? ` §7(${completedBy})` : " §7(Claimed)";
+      const ownerLabel = claimed && completedBy ? ` §7(${completedBy}§7)` : " §7(Claimed)";
       const suffix = claimed ? ownerLabel : pointsLabel;
       const line = `${statusPrefix} ${challenge.name} ${suffix}`;
-      this.setTitle(player, `update:eslr:challenge${i}:${line}`);
+      this.setTitle(player, `update:eslr:chlist${i}:${line}`);
     }
+    this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
+  }
+
+  updateScore(player: Player, team: string, score: number): void {
+    if (!this.isGameActive()) return;
+    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
+    this.setTitle(player, `update:eslr:score${team}:${teamLabel} - ${score}`);
+    this.debugLogger?.log(`HUD score update for ${player.nameTag}: ${team} ${score}`);
   }
 
   updateScores(player: Player): void {
@@ -81,28 +103,69 @@ export class HUDManager {
       "update:eslr:timer:",
       "update:eslr:scorecrimson:",
       "update:eslr:scoreazure:",
-      "update:eslr:challenges:header:",
+      "update:eslr:chheader:",
+      "update:eslr:chlist0:",
+      "update:eslr:chlist1:",
+      "update:eslr:chlist2:",
+      "update:eslr:chlist3:",
+      "update:eslr:chlist4:",
+      "update:eslr:chlist5:",
+      "update:eslr:chlist6:",
+      "update:eslr:chlist7:",
+      "update:eslr:chlist8:",
+      "update:eslr:chlist9:",
     ];
-
-    prefixes.forEach((prefix) => this.setTitle(player, prefix));
-    for (let i = 0; i < 10; i++) {
-      this.setTitle(player, `update:eslr:challenge${i}:`);
-    }
+    system.run(() => {
+      prefixes.forEach((prefix) => this.setTitle(player, prefix));
+    });
     this.debugLogger?.log(`HUD cleared for ${player.nameTag}`);
   }
 
   private setTitle(player: Player, text: string): void {
+    const playerId = player.id;
+
+    if (!this.playerQueues.has(playerId)) {
+      this.playerQueues.set(playerId, []);
+    }
+
+    this.playerQueues.get(playerId)!.push(text);
+
+    if (!this.processingPlayers.has(playerId)) {
+      this.processQueue(player);
+    }
+  }
+
+  private async processQueue(player: Player): Promise<void> {
+    const playerId = player.id;
+
+    if (this.processingPlayers.has(playerId)) return;
+    this.processingPlayers.add(playerId);
+
+    const queue = this.playerQueues.get(playerId);
+    const text = queue?.shift();
+
+    if (!text) {
+      this.processingPlayers.delete(playerId);
+      return;
+    }
+
     try {
-      system.run(() => {
-        player.onScreenDisplay.setTitle(text, {
-          fadeInDuration: 0,
-          fadeOutDuration: 0,
-          stayDuration: 0,
-          subtitle: undefined,
-        });
+      console.log(`${system.currentTick} setTitle ${text}`);
+      player.onScreenDisplay.setTitle(text, {
+        stayDuration: 1,
+        fadeInDuration: 0,
+        fadeOutDuration: 0,
       });
+      await system.waitTicks(1);
     } catch (err) {
       this.debugLogger?.warn("Failed to set HUD title", player.nameTag, err);
+    }
+
+    this.processingPlayers.delete(playerId);
+
+    // Process next item if queue has more
+    if (queue && queue.length > 0) {
+      this.processQueue(player);
     }
   }
 

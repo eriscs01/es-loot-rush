@@ -262,13 +262,7 @@ export class ChestManager {
 
     for (const challenge of challenges) {
       if (this.challengeManager.validateDeposit(container, challenge)) {
-        const completed = this.challengeManager.handleChallengeCompletion(team, challenge, loc);
-        if (completed) {
-          for (let i = 0; i < container.size; i++) {
-            container.setItem(i, undefined);
-          }
-          this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; chest cleared`);
-        }
+        this.challengeManager.handleChallengeCompletion(team, challenge, container, loc);
         break;
       }
     }

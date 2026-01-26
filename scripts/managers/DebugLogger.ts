@@ -13,13 +13,18 @@ export class DebugLogger {
     this.log(`Debug mode ${flag ? "enabled" : "disabled"}`);
   }
 
+  debug(message: string, ...meta: unknown[]): void {
+    if (!this.isEnabled() || !console.debug) return;
+    console.debug(`[LootRush][DEBUG] ${message}`, ...meta);
+  }
+
   log(message: string, ...meta: unknown[]): void {
-    if (!this.isEnabled()) return;
-    console.log(`[LootRush][DEBUG] ${message}`, ...meta);
+    if (!this.isEnabled() || !console.log) return;
+    console.log(`[LootRush][INFO] ${message}`, ...meta);
   }
 
   warn(message: string, ...meta: unknown[]): void {
-    if (!this.isEnabled()) return;
-    console.warn(`[LootRush][DEBUG] ${message}`, ...meta);
+    if (!this.isEnabled() || !console.warn) return;
+    console.warn(`[LootRush][WARN] ${message}`, ...meta);
   }
 }

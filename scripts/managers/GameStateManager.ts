@@ -85,7 +85,7 @@ export class GameStateManager {
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.activeChallenges, "[]");
     this.worldRef.setDynamicProperty(DYNAMIC_KEYS.completedChallenges, "[]");
     this.startRoundTimer();
-    this.updateAllTimers();
+    this.initiateHUDState();
     this.chestManager.monitorChests();
     this.teamManager.registerJoinHandlers();
     this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
@@ -128,8 +128,7 @@ export class GameStateManager {
     this.teamManager.clearTeams();
     this.chestManager.clearChestReferences();
 
-    const players = this.worldRef.getAllPlayers();
-    players.forEach((p) => {
+    this.worldRef.getAllPlayers().forEach((p) => {
       this.hudManager.clearHUD(p);
       this.teamManager.resetPlayerNameTag(p);
     });
@@ -473,8 +472,10 @@ export class GameStateManager {
   }
 
   private updatePauseHUD(paused: boolean): void {
-    const players = this.worldRef.getAllPlayers();
-    players.forEach((p) => this.hudManager.setPaused(p, paused));
+    system.run(() => {
+      const players = this.worldRef.getAllPlayers();
+      players.forEach((p) => this.hudManager.setPaused(p, paused));
+    });
   }
 
   private announceWinner(): void {
@@ -653,5 +654,18 @@ export class GameStateManager {
   private getNumberProperty(key: string, fallback: number): number {
     const val = this.worldRef.getDynamicProperty(key);
     return typeof val === "number" ? val : fallback;
+  }
+
+  private initiateHUDState(): void {
+    system.run(() => {
+      const players = world.getAllPlayers();
+      const challenges = this.challengeManager.getActiveChallenges();
+      players.forEach((p) => {
+        this.hudManager.updateRoundInfo(p);
+        this.hudManager.updateTimer(p);
+        this.hudManager.updateScores(p);
+        this.hudManager.updateChallenges(p, challenges);
+      });
+    });
   }
 }

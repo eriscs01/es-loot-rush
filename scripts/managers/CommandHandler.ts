@@ -240,13 +240,6 @@ export class CommandHandler {
     this.gameStateManager.startGame();
     const active = this.challengeManager.selectChallenges();
     const players = world.getAllPlayers();
-    const challenges = this.challengeManager.getActiveChallenges();
-    players.forEach((p) => {
-      this.hudManager.updateRoundInfo(p);
-      this.hudManager.updateTimer(p);
-      this.hudManager.updateScores(p);
-      this.hudManager.updateChallenges(p, challenges);
-    });
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
     world.sendMessage(`Round 1 with ${active.length} challenges. Duration: ${durationInMins} minutes.`);
@@ -303,6 +296,7 @@ export class CommandHandler {
     this.chestManager.placeChests(center, dim);
     this.teamManager.setSpawnPointForAll(players, center);
     this.gameStateManager.setTeamsFormed(true);
+    players.forEach((p) => this.hudManager.clearHUD(p));
 
     const crimsonList = this.teamManager.getRoster("crimson");
     const azureList = this.teamManager.getRoster("azure");
@@ -350,7 +344,9 @@ export class CommandHandler {
   }
 
   handleReset(origin: CustomCommandOrigin): CustomCommandResult {
-    this.gameStateManager.resetGame();
+    system.run(() => {
+      this.gameStateManager.resetGame();
+    });
     void origin;
     return { status: CustomCommandStatus.Success, message: "State reset. Use lr:teamup to form teams." };
   }
