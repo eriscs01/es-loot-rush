@@ -1,8 +1,8 @@
 {
   "format_version": 2,
   "header": {
-    "name": "ES-Loot-Rush",
-    "description": "ES-Loot-Rush",
+    "name": "Loot Rush - Behavior Pack",
+    "description": "A competitive team-based challenge game where two teams race to complete resource gathering challenges across timed rounds. Features configurable difficulty, real-time HUD tracking, and strategic gameplay.",
     "uuid": "3c169c3d-74b4-45ab-b190-3ec7afff692f",
     "version": [1, 0, 0],
     "min_engine_version": [1, 21, 130]
