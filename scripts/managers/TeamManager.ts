@@ -22,15 +22,26 @@ export class TeamManager {
 
     this.spawnHandler = (event) => {
       const player = event.player;
-      if (!this.isTeamsFormed()) return;
+      const playerId = removeColorCode(player.nameTag ?? player.id);
+      this.debugLogger?.log(`[spawnHandler] Player spawned: ${playerId}`);
+      if (!this.isTeamsFormed()) {
+        this.debugLogger?.log("[spawnHandler] Teams not formed, skipping team color and spawn set.");
+        return;
+      }
       this.applyTeamColor(player);
+      this.debugLogger?.log(`[spawnHandler] Applied team color to: ${playerId}`);
       const spawnLoc = this.getStoredSpawn();
       if (spawnLoc) {
         this.setSpawnPointForPlayer(player, spawnLoc);
+        this.debugLogger?.log(
+          `[spawnHandler] Set spawn point for ${playerId} to (${spawnLoc.x}, ${spawnLoc.y}, ${spawnLoc.z})`
+        );
+      } else {
+        this.debugLogger?.log(`[spawnHandler] No stored spawn location for ${playerId}`);
       }
     };
 
-    const spawnHandler = this.spawnHandler;
+    const spawnHandler = this.spawnHandler.bind(this);
     system.run(() => {
       this.worldRef.afterEvents.playerSpawn.subscribe(spawnHandler);
     });
@@ -60,6 +71,7 @@ export class TeamManager {
     azure.forEach((p) => this.assignPlayerToTeam(p, "azure"));
     this.debugLogger?.log(`Formed teams: crimson=${crimson.length}, azure=${azure.length}`);
     this.persistRosters();
+    this.registerJoinHandlers();
   }
 
   clearTeams(): void {
