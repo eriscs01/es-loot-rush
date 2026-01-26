@@ -8,7 +8,7 @@ import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { GameConfig } from "../types";
-import { BACKUP_PREFIX, BACKUP_TIMESTAMP, DYNAMIC_KEYS } from "../config/constants";
+import { DYNAMIC_KEYS } from "../config/constants";
 
 export class GameStateManager {
   private gameActive = false;
@@ -33,6 +33,12 @@ export class GameStateManager {
     private readonly hudManager: HUDManager,
     private readonly audioManager?: AudioManager
   ) {
+    void configManager;
+    void teamManager;
+    void challengeManager;
+    void chestManager;
+    void hudManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 

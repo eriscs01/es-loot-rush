@@ -16,6 +16,8 @@ export class HUDManager {
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager
   ) {
+    void configManager;
+    void teamManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 

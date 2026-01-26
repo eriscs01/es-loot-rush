@@ -41,6 +41,10 @@ export class ChallengeManager {
     private readonly hudManager: HUDManager,
     private readonly audioManager: AudioManager
   ) {
+    void configManager;
+    void teamManager;
+    void hudManager;
+    void audioManager;
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
     this.debugLogger = new DebugLogger(propertyStore);
   }

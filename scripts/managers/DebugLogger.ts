@@ -2,7 +2,9 @@ import { DYNAMIC_KEYS } from "../config/constants";
 import { PropertyStore } from "./PropertyStore";
 
 export class DebugLogger {
-  constructor(private readonly propertyStore: PropertyStore) {}
+  constructor(private readonly propertyStore: PropertyStore) {
+    void propertyStore;
+  }
 
   isEnabled(): boolean {
     return this.propertyStore.getBoolean(DYNAMIC_KEYS.debugMode, false);

@@ -33,6 +33,13 @@ export class CommandHandler {
     private readonly configManager: ConfigManager,
     private readonly audioManager: AudioManager
   ) {
+    void gameStateManager;
+    void teamManager;
+    void challengeManager;
+    void chestManager;
+    void hudManager;
+    void configManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -255,7 +262,7 @@ export class CommandHandler {
 
     // Final reveal
     const crimsonIds = this.teamManager.getRoster("crimson");
-    const azureIds = this.teamManager.getRoster("azure");
+    const _azureIds = this.teamManager.getRoster("azure");
     players.forEach((p) => {
       const isCrimson = crimsonIds.includes(p.nameTag ?? p.id);
       const title = isCrimson ? "§c§lCRIMSON CRUSADERS" : "§b§lAZURE ARCHITECTS";

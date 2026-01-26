@@ -9,7 +9,7 @@ export class TeamManager {
   private playerTeamCache = new Map<string, TeamId>();
   private crimsonPlayers: string[] = [];
   private azurePlayers: string[] = [];
-  private spawnHandler?: (event: { player: Player }) => void;
+  private spawnHandler?: (_event: { player: Player }) => void;
   private readonly debugLogger: DebugLogger;
 
   constructor(private readonly propertyStore: PropertyStore) {
@@ -19,8 +19,8 @@ export class TeamManager {
   registerJoinHandlers(): void {
     if (this.spawnHandler) return;
 
-    this.spawnHandler = (event) => {
-      const player = event.player;
+    this.spawnHandler = (_event) => {
+      const player = _event.player;
       const playerId = removeColorCode(player.nameTag ?? player.id);
       this.debugLogger?.log(`[spawnHandler] Player spawned: ${playerId}`);
       if (!this.isTeamsFormed()) {

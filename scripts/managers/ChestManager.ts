@@ -23,6 +23,9 @@ export class ChestManager {
     private readonly teamManager: TeamManager,
     private readonly audioManager?: AudioManager
   ) {
+    void challengeManager;
+    void teamManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
     this.registerProtection();
     this.deferLoadLocations();
@@ -69,7 +72,7 @@ export class ChestManager {
     this.debugLogger?.log("Stopped chest monitoring");
   }
 
-  validateChestContents(team: TeamId): boolean {
+  validateChestContents(_team: TeamId): boolean {
     // Validation logic deferred to Task 1.4 and Task 1.5.
     return false;
   }
@@ -112,8 +115,8 @@ export class ChestManager {
 
   private deferLoadLocations(): void {
     const anyWorld = world as unknown as {
-      afterEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
-      beforeEvents?: { worldInitialize?: { subscribe: (cb: (ev: any) => void) => void } };
+      afterEvents?: { worldInitialize?: { subscribe: (_cb: (_ev: any) => void) => void } };
+      beforeEvents?: { worldInitialize?: { subscribe: (_cb: (_ev: any) => void) => void } };
     };
 
     const subscriber =
@@ -208,7 +211,7 @@ export class ChestManager {
     return this.propertyStore.getJSON<Vector3>(key, undefined as any);
   }
 
-  private placeChestBlock(dimension: Dimension, location: Vector3, name: string, facing: "east" | "west"): void {
+  private placeChestBlock(dimension: Dimension, location: Vector3, _label: string, facing: "east" | "west"): void {
     try {
       const block = dimension.getBlock(location);
       if (!block) return;
@@ -216,11 +219,11 @@ export class ChestManager {
       const permutation = block.permutation.withState("minecraft:cardinal_direction", facing);
       block.setPermutation(permutation as BlockPermutation);
       const container = block.getComponent("inventory") as
-        | { container?: { setCustomName: (label: string) => void } }
+        | { container?: { setCustomName: (_label: string) => void } }
         | undefined;
-      container?.container?.setCustomName?.(name);
+      container?.container?.setCustomName?.(_label);
     } catch (err) {
-      this.debugLogger?.warn("Failed to place chest block", name, err);
+      this.debugLogger?.warn("Failed to place chest block", _label, err);
     }
   }
 
@@ -267,14 +270,14 @@ export class ChestManager {
       { loc: this.azureChestLocation, label: "§b§lAZURE BOUNTY" },
     ];
 
-    entries.forEach(({ loc, label }) => {
+    entries.forEach(({ loc, label: _label }) => {
       if (!loc) return;
       try {
         const block = dim.getBlock(loc);
         const inventory = block?.getComponent("inventory") as {
-          container?: { setCustomName: (label: string) => void };
+          container?: { setCustomName: (_label: string) => void };
         };
-        inventory?.container?.setCustomName?.(label);
+        inventory?.container?.setCustomName?.(_label);
       } catch (err) {
         this.debugLogger?.warn("Failed to refresh chest name", loc, err);
       }
