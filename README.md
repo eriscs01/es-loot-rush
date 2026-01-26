@@ -127,6 +127,8 @@ products:
    lr:reset                    # Complete reset (clears teams and state)
    ```
 
+**Game Progression**: Rounds automatically transition based on configured duration. After the final round, the winner is announced automatically. Teams persist between games—run `lr:start` again for a rematch or `lr:reset` for new teams.
+
 ### For Players
 
 1. **Check Your Team**: Look at your name tag color (red = Crimson, blue = Azure)
@@ -171,6 +173,12 @@ Rare items and special loot:
 
 **Default Configuration**: 3 Easy + 2 Medium + 1 Hard = 6 challenges per round (~145-215 points available)
 
+**How Points Work**:
+- Only the **first team** to complete a challenge earns the points
+- Completed challenges lock for both teams
+- Points accumulate across all rounds
+- Team with highest total score wins after final round
+
 ## 🎛️ Configuration
 
 ### Pre-Game Configuration
@@ -179,9 +187,9 @@ Configure before running `lr:start`:
 
 | Setting | Command | Default | Range | Description |
 |---------|---------|---------|-------|-------------|
-| Easy Challenges | `lr:config:set easyChallengeCount <n>` | 3 | 1-10 | Easy challenges per round |
-| Medium Challenges | `lr:config:set mediumChallengeCount <n>` | 2 | 1-10 | Medium challenges per round |
-| Hard Challenges | `lr:config:set hardChallengeCount <n>` | 1 | 1-10 | Hard challenges per round |
+| Easy Challenges | `lr:config:set easyChallengeCount <n>` | 3 | 0-10 | Easy challenges per round |
+| Medium Challenges | `lr:config:set mediumChallengeCount <n>` | 2 | 0-10 | Medium challenges per round |
+| Hard Challenges | `lr:config:set hardChallengeCount <n>` | 1 | 0-10 | Hard challenges per round |
 | Total Rounds | `lr:config:set totalRounds <n>` | 4 | 1-10 | Number of rounds in game |
 | Round Duration | `lr:config:set roundDurationTicks <n>` | 18000 | - | Ticks per round (18000 = 15 min) |
 
@@ -256,24 +264,6 @@ All commands require **GameDirectors** permission (Operator level 1+):
 | `lr:debug true\|false` | Toggle debug logging |
 | `lr:backup` | Create backup of current game state |
 | `lr:restore` | Restore from backup |
-
-## 🎪 Game Flow
-
-1. **Configuration** (Optional): Admin adjusts settings via `lr:config:set`
-2. **Setup**: Admin runs `lr:teamup` to form teams and place chests
-3. **Start**: Admin runs `lr:start` to begin Round 1
-4. **Gameplay**: Teams compete to complete challenges
-5. **Rounds**: Auto-transitions every round based on configured duration
-6. **End**: After final round, winner announced automatically
-7. **Rematch**: Teams persist—run `lr:start` again or `lr:reset` for new teams
-
-## 🏆 Scoring System
-
-- Points vary by challenge difficulty (Easy: 10-20, Medium: 25-45, Hard: 50-75)
-- Only the **first team** to complete a challenge earns the points
-- Completed challenges lock for both teams
-- Points accumulate across all rounds
-- Team with highest total score wins
 
 ## 🔧 Development
 
