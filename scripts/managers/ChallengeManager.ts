@@ -9,6 +9,7 @@ import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { ChestManager } from "./ChestManager";
+import { buildChallengeName } from "../utils/text";
 
 export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
@@ -71,7 +72,7 @@ export class ChallengeManager {
 
     const selections = Array.from(uniqueById.values());
 
-    this.activeChallenges = selections.map((c) => ({ ...c, state: "available" }));
+    this.activeChallenges = selections.map((c) => ({ ...c, state: "available", name: buildChallengeName(c) }));
     this.persistActive();
     this.completedChallenges = [];
     this.persistCompleted();

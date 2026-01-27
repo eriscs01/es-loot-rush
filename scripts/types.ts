@@ -7,15 +7,15 @@ export type ChallengeState = "available" | "completed" | "locked";
 export interface ChallengeDefinition {
   id: string;
   title: string;
-  name: string;
   item: MinecraftItemTypes;
   count: number;
   points: number;
   difficulty: "easy" | "medium" | "hard";
   variant?: "any";
 }
-export type RawChallengeData = Omit<ChallengeDefinition, "name" | "difficulty">;
+export type RawChallengeData = Omit<ChallengeDefinition, "difficulty">;
 export interface ChallengeRecord extends ChallengeDefinition {
+  name: string;
   state: ChallengeState;
   completedBy?: TeamId;
 }

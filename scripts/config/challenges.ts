@@ -1,30 +1,5 @@
 import { MinecraftItemTypes } from "@minecraft/vanilla-data";
-import { ChallengeDefinition, ChallengeDifficulty, RawChallengeData } from "../types";
-import { ItemStack } from "@minecraft/server";
-
-function getItemLabel(typeId: MinecraftItemTypes, includeVariant = true): string | undefined {
-  const itemStack = new ItemStack(typeId);
-  if (includeVariant) return itemStack.nameTag;
-
-  const id = typeId.replace("minecraft:", "");
-  // Return just the base type
-  if (id.includes("_wool")) return "Wool";
-  if (id.includes("_planks")) return "Planks";
-  if (id.includes("_log")) return "Log";
-  if (id.includes("_concrete_powder")) return "Concrete";
-  if (id.includes("_concrete")) return "Concrete";
-  if (id.includes("_terracotta")) return "Terracotta";
-}
-
-// Builder function to create challenge definitions with computed names
-function buildChallenge(raw: RawChallengeData, difficulty: ChallengeDifficulty): ChallengeDefinition {
-  const includeVariant = raw.variant !== "any";
-  return {
-    ...raw,
-    name: `${raw.count} ${getItemLabel(raw.item, includeVariant)}`,
-    difficulty,
-  };
-}
+import { ChallengeDefinition, RawChallengeData } from "../types";
 
 // Raw challenge data organized by difficulty
 const RAW_CHALLENGES: Record<string, RawChallengeData[]> = {
@@ -661,9 +636,9 @@ const RAW_CHALLENGES: Record<string, RawChallengeData[]> = {
   ],
 };
 
-// Build the final CHALLENGES object with computed names
+// Build the final CHALLENGES object
 export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
-  easy: RAW_CHALLENGES.easy.map((c) => buildChallenge(c, "easy")),
-  medium: RAW_CHALLENGES.medium.map((c) => buildChallenge(c, "medium")),
-  hard: RAW_CHALLENGES.hard.map((c) => buildChallenge(c, "hard")),
+  easy: RAW_CHALLENGES.easy.map((c) => ({ ...c, difficulty: "easy" })),
+  medium: RAW_CHALLENGES.medium.map((c) => ({ ...c, difficulty: "medium" })),
+  hard: RAW_CHALLENGES.hard.map((c) => ({ ...c, difficulty: "hard" })),
 };
