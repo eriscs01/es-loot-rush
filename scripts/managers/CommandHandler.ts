@@ -262,7 +262,6 @@ export class CommandHandler {
 
     // Final reveal
     const crimsonIds = this.teamManager.getRoster("crimson");
-    const _azureIds = this.teamManager.getRoster("azure");
     players.forEach((p) => {
       const isCrimson = crimsonIds.includes(p.nameTag ?? p.id);
       const title = isCrimson ? "§c§lCRIMSON CRUSADERS" : "§b§lAZURE ARCHITECTS";

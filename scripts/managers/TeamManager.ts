@@ -19,8 +19,8 @@ export class TeamManager {
   registerJoinHandlers(): void {
     if (this.spawnHandler) return;
 
-    this.spawnHandler = (_event) => {
-      const player = _event.player;
+    this.spawnHandler = (event) => {
+      const player = event.player;
       const playerId = removeColorCode(player.nameTag ?? player.id);
       this.debugLogger?.log(`[spawnHandler] Player spawned: ${playerId}`);
       if (!this.isTeamsFormed()) {

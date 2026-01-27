@@ -13,7 +13,6 @@ export class ChestManager {
   private azureChestLocation: Vector3 | undefined;
   private spawnLocation: Vector3 | undefined;
   private monitorHandle?: number;
-  private nameRefreshHandle?: number;
   private didInit = false;
   private readonly debugLogger: DebugLogger;
 
@@ -28,7 +27,7 @@ export class ChestManager {
     void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
     this.registerProtection();
-    this.deferLoadLocations();
+    this.initializeLocations();
   }
 
   placeChests(centerLocation: Vector3, dimension?: Dimension): void {
@@ -49,7 +48,6 @@ export class ChestManager {
     this.crimsonChestLocation = crimsonLoc;
     this.azureChestLocation = azureLoc;
     this.persistLocations();
-    this.startNameRefresh();
     this.debugLogger?.log(`Placed chests at crimson=${JSON.stringify(crimsonLoc)} azure=${JSON.stringify(azureLoc)}`);
   }
 
@@ -72,8 +70,23 @@ export class ChestManager {
     this.debugLogger?.log("Stopped chest monitoring");
   }
 
-  validateChestContents(_team: TeamId): boolean {
-    // Validation logic deferred to Task 1.4 and Task 1.5.
+  validateChestContents(team: TeamId): boolean {
+    const loc = this.getChestLocation(team);
+    if (!loc) return false;
+
+    const dim = world.getDimension("overworld");
+    const container = this.getContainerAt(dim, loc);
+    if (!container) return false;
+
+    const challenges = this.challengeManager.getAvailableChallenges();
+
+    // Check if any available challenge is satisfied by the chest contents
+    for (const challenge of challenges) {
+      if (this.challengeManager.validateDeposit(container, challenge)) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -96,7 +109,6 @@ export class ChestManager {
     this.propertyStore.setString(DYNAMIC_KEYS.chestCrimsonLocation, "{}");
     this.propertyStore.setString(DYNAMIC_KEYS.chestAzureLocation, "{}");
     this.propertyStore.setString(DYNAMIC_KEYS.spawnLocation, "{}");
-    this.stopNameRefresh();
     this.debugLogger?.log("Cleared stored chest and spawn locations");
   }
 
@@ -110,31 +122,12 @@ export class ChestManager {
 
   reloadFromProperties(): void {
     this.loadLocationsFromProperties();
-    this.startNameRefresh();
-  }
-
-  private deferLoadLocations(): void {
-    const anyWorld = world as unknown as {
-      afterEvents?: { worldInitialize?: { subscribe: (_cb: (_ev: any) => void) => void } };
-      beforeEvents?: { worldInitialize?: { subscribe: (_cb: (_ev: any) => void) => void } };
-    };
-
-    const subscriber =
-      anyWorld.afterEvents?.worldInitialize?.subscribe ?? anyWorld.beforeEvents?.worldInitialize?.subscribe;
-
-    if (subscriber) {
-      subscriber(() => this.initializeLocations());
-    } else {
-      // Fallback if worldInitialize is unavailable
-      system.runTimeout(() => this.initializeLocations(), 0);
-    }
   }
 
   private initializeLocations(): void {
     if (this.didInit) return;
     this.didInit = true;
     this.loadLocationsFromProperties();
-    this.startNameRefresh();
     this.debugLogger?.log("ChestManager locations loaded after world initialize");
   }
 
@@ -218,10 +211,6 @@ export class ChestManager {
       block.setType("minecraft:chest");
       const permutation = block.permutation.withState("minecraft:cardinal_direction", facing);
       block.setPermutation(permutation as BlockPermutation);
-      const container = block.getComponent("inventory") as
-        | { container?: { setCustomName: (_label: string) => void } }
-        | undefined;
-      container?.container?.setCustomName?.(_label);
     } catch (err) {
       this.debugLogger?.warn("Failed to place chest block", _label, err);
     }
@@ -250,38 +239,6 @@ export class ChestManager {
         break;
       }
     }
-  }
-
-  private startNameRefresh(): void {
-    if (this.nameRefreshHandle !== undefined || typeof system.runInterval !== "function") return;
-    this.nameRefreshHandle = system.runInterval(() => this.refreshChestNames(), 600);
-  }
-
-  private stopNameRefresh(): void {
-    if (this.nameRefreshHandle === undefined || typeof system.clearRun !== "function") return;
-    system.clearRun(this.nameRefreshHandle);
-    this.nameRefreshHandle = undefined;
-  }
-
-  private refreshChestNames(): void {
-    const dim = world.getDimension("overworld");
-    const entries: Array<{ loc?: Vector3; label: string }> = [
-      { loc: this.crimsonChestLocation, label: "§c§lCRIMSON BOUNTY" },
-      { loc: this.azureChestLocation, label: "§b§lAZURE BOUNTY" },
-    ];
-
-    entries.forEach(({ loc, label: _label }) => {
-      if (!loc) return;
-      try {
-        const block = dim.getBlock(loc);
-        const inventory = block?.getComponent("inventory") as {
-          container?: { setCustomName: (_label: string) => void };
-        };
-        inventory?.container?.setCustomName?.(_label);
-      } catch (err) {
-        this.debugLogger?.warn("Failed to refresh chest name", loc, err);
-      }
-    });
   }
 
   private getContainerAt(dimension: Dimension, location: Vector3): Container | undefined {
