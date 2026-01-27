@@ -1,3 +1,5 @@
+import { MinecraftItemTypes } from "@minecraft/vanilla-data";
+
 export type TeamId = "crimson" | "azure";
 
 export type ChallengeDifficulty = "easy" | "medium" | "hard";
@@ -6,13 +8,13 @@ export interface ChallengeDefinition {
   id: string;
   title: string;
   name: string;
-  item: string;
+  item: MinecraftItemTypes;
   count: number;
   points: number;
   difficulty: "easy" | "medium" | "hard";
   variant?: "any";
 }
-
+export type RawChallengeData = Omit<ChallengeDefinition, "name" | "difficulty">;
 export interface ChallengeRecord extends ChallengeDefinition {
   state: ChallengeState;
   completedBy?: TeamId;
