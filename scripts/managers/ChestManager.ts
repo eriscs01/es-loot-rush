@@ -1,48 +1,50 @@
-import { BlockPermutation, Container, Dimension, Vector3, system, world } from "@minecraft/server";
+import { BlockPermutation, Container, ItemStack, Vector3, world } from "@minecraft/server";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { PropertyStore } from "./PropertyStore";
-import { ChallengeManager, ChallengeRecord } from "./ChallengeManager";
+import { ChallengeDefinition } from "../types";
 import { TeamManager } from "./TeamManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { removeColorCode } from "../utils/text";
+import { ANY_VARIANTS } from "../config/variants";
 
 export class ChestManager {
   private crimsonChestLocation: Vector3 | undefined;
   private azureChestLocation: Vector3 | undefined;
   private spawnLocation: Vector3 | undefined;
-  private monitorHandle?: number;
   private didInit = false;
   private readonly debugLogger: DebugLogger;
 
   constructor(
     private readonly propertyStore: PropertyStore,
-    private readonly challengeManager: ChallengeManager,
     private readonly teamManager: TeamManager,
     private readonly audioManager?: AudioManager
   ) {
-    void challengeManager;
     void teamManager;
     void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
-    this.registerProtection();
-    this.initializeLocations();
   }
 
-  placeChests(centerLocation: Vector3, dimension?: Dimension): void {
+  initialize(): void {
+    world.afterEvents.worldLoad.subscribe(() => {
+      this.registerProtection();
+      this.initializeLocations();
+    });
+  }
+
+  placeChests(centerLocation: Vector3): void {
     this.spawnLocation = centerLocation;
-    const dim = dimension ?? world.getDimension("overworld");
     const crimsonLoc = centerLocation
       ? { x: centerLocation.x - 3, y: centerLocation.y, z: centerLocation.z }
       : undefined;
     const azureLoc = centerLocation ? { x: centerLocation.x + 3, y: centerLocation.y, z: centerLocation.z } : undefined;
 
     if (crimsonLoc) {
-      this.placeChestBlock(dim, crimsonLoc, "§c§lCRIMSON BOUNTY", "west");
+      this.placeChestBlock(crimsonLoc, "west");
     }
     if (azureLoc) {
-      this.placeChestBlock(dim, azureLoc, "§b§lAZURE BOUNTY", "east");
+      this.placeChestBlock(azureLoc, "east");
     }
 
     this.crimsonChestLocation = crimsonLoc;
@@ -55,51 +57,88 @@ export class ChestManager {
     return team === "crimson" ? this.crimsonChestLocation : this.azureChestLocation;
   }
 
-  monitorChests(): void {
-    if (this.monitorHandle !== undefined) return;
-    this.monitorHandle = system.runInterval(() => this.pollChests(), 10);
-    this.debugLogger?.log("Started chest monitoring");
-  }
-
-  stopMonitoring(): void {
-    if (this.monitorHandle === undefined) return;
-    if (typeof system.clearRun === "function") {
-      system.clearRun(this.monitorHandle);
+  validateChestContents(container: Container, challenge: ChallengeDefinition): boolean {
+    const filledSlots = container.size - container.emptySlotsCount;
+    if (filledSlots === 0) {
+      this.debugLogger?.debug(`Validation failed for challenge ${challenge.id}; container empty`);
+      return false;
     }
-    this.monitorHandle = undefined;
-    this.debugLogger?.log("Stopped chest monitoring");
-  }
 
-  validateChestContents(team: TeamId): boolean {
-    const loc = this.getChestLocation(team);
-    if (!loc) return false;
+    let total = 0;
+    let inspectedFilled = 0;
+    const startSlot = container.firstItem() ?? 0;
 
-    const dim = world.getDimension("overworld");
-    const container = this.getContainerAt(dim, loc);
-    if (!container) return false;
+    for (let i = startSlot; i < container.size && inspectedFilled < filledSlots; i++) {
+      const slot = container.getSlot(i);
+      if (!slot.hasItem()) continue;
+      inspectedFilled++;
 
-    const challenges = this.challengeManager.getAvailableChallenges();
+      if (this.matchesRequirement(slot.typeId, challenge)) {
+        total += slot.amount;
+      }
 
-    // Check if any available challenge is satisfied by the chest contents
-    for (const challenge of challenges) {
-      if (this.challengeManager.validateDeposit(container, challenge)) {
+      if (total >= challenge.count) {
+        this.debugLogger.log(`Validation passed for challenge ${challenge.id}; total=${total}`);
         return true;
       }
     }
-
+    this.debugLogger.debug(`Validation failed for challenge ${challenge.id}; total=${total}`);
     return false;
   }
 
-  clearChest(team: TeamId): void {
-    const loc = this.getChestLocation(team);
-    if (!loc) return;
-    const dim = world.getDimension("overworld");
-    const container = this.getContainerAt(dim, loc);
-    if (!container) return;
-    for (let i = 0; i < container.size; i++) {
-      container.setItem(i, undefined);
+  private matchesRequirement(item: ItemStack | string, challenge: ChallengeDefinition): boolean {
+    const typeId = typeof item === "string" ? item : item.typeId;
+
+    if (challenge.variant === "any") {
+      const allowed = ANY_VARIANTS[challenge.item];
+      if (allowed) {
+        return allowed.includes(typeId);
+      }
     }
-    this.debugLogger?.log(`Cleared chest for team ${team}`);
+    return typeId === challenge.item;
+  }
+
+  removeChallengeItems(container: Container, challenge: ChallengeDefinition): void {
+    let remaining = challenge.count;
+    if (container.emptySlotsCount === container.size) return;
+
+    const targetTypes = challenge.variant === "any" ? (ANY_VARIANTS[challenge.item] ?? []) : [challenge.item];
+
+    while (remaining > 0) {
+      let foundIndex: number | undefined;
+
+      for (const typeId of targetTypes) {
+        const probe = new ItemStack(typeId, 1);
+        const idx = container.find(probe);
+        if (idx !== undefined && (foundIndex === undefined || idx < foundIndex)) {
+          foundIndex = idx;
+        }
+      }
+
+      if (foundIndex === undefined) break;
+
+      const slot = container.getSlot(foundIndex);
+      if (!slot.hasItem()) {
+        slot.setItem(undefined);
+        continue;
+      }
+
+      const take = Math.min(slot.amount, remaining);
+      remaining -= take;
+
+      const newAmount = slot.amount - take;
+      if (newAmount > 0) {
+        slot.amount = newAmount;
+      } else {
+        slot.setItem(undefined);
+      }
+    }
+
+    if (remaining > 0) {
+      this.debugLogger?.warn(`Failed to consume full requirement for ${challenge.id}; remaining=${remaining}`);
+    } else {
+      this.debugLogger?.log(`Consumed items for challenge ${challenge.id}`);
+    }
   }
 
   clearChestReferences(): void {
@@ -112,28 +151,25 @@ export class ChestManager {
     this.debugLogger?.log("Cleared stored chest and spawn locations");
   }
 
-  protectChest(location: Vector3): void {
-    void location;
-  }
-
   getSpawnLocation(): Vector3 | undefined {
     return this.spawnLocation;
-  }
-
-  reloadFromProperties(): void {
-    this.loadLocationsFromProperties();
   }
 
   private initializeLocations(): void {
     if (this.didInit) return;
     this.didInit = true;
-    this.loadLocationsFromProperties();
+    this.crimsonChestLocation = this.propertyStore.getJSON<Vector3>(
+      DYNAMIC_KEYS.chestCrimsonLocation,
+      undefined as any
+    );
+    this.azureChestLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.chestAzureLocation, undefined as any);
+    this.spawnLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.spawnLocation, undefined as any);
     this.debugLogger?.log("ChestManager locations loaded after world initialize");
   }
 
   private registerProtection(): void {
     world.beforeEvents.playerBreakBlock.subscribe((event) => {
-      if (this.isProtectedLocation(event.block.location)) {
+      if (this.isProtectedLocation(event.block.location).isProtected) {
         event.cancel = true;
         event.player.sendMessage("§cThis chest is protected!");
       }
@@ -141,16 +177,14 @@ export class ChestManager {
 
     world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
       const loc = event.block.location;
-      const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, loc);
-      const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, loc);
-      if (!isCrimson && !isAzure) return;
+      const { isProtected, teamId: chestTeam } = this.isProtectedLocation(loc);
+      if (!isProtected) return;
       this.debugLogger?.log(`[ChestManager] Player attempted to interact with chest at ${JSON.stringify(loc)}`);
 
       const teamsFormed = this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
       if (!teamsFormed) return;
 
       const playerTeam = this.teamManager.getPlayerTeam(event.player);
-      const chestTeam: TeamId | undefined = isCrimson ? "crimson" : isAzure ? "azure" : undefined;
       this.debugLogger?.log(
         `[ChestManager] Player: ${removeColorCode(event.player.nameTag ?? event.player.id)}, Player team: ${playerTeam}, Chest team: ${chestTeam}`
       );
@@ -174,11 +208,12 @@ export class ChestManager {
     });
   }
 
-  private isProtectedLocation(location: Vector3): boolean {
-    return !!(
-      (this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, location)) ||
-      (this.azureChestLocation && this.sameLocation(this.azureChestLocation, location))
-    );
+  private isProtectedLocation(location: Vector3): { isProtected: boolean; teamId?: TeamId } {
+    const isCrimson = this.crimsonChestLocation && this.sameLocation(this.crimsonChestLocation, location);
+    const isAzure = this.azureChestLocation && this.sameLocation(this.azureChestLocation, location);
+    const isProtected = Boolean(isCrimson || isAzure);
+    const teamId: TeamId | undefined = isAzure ? "azure" : isCrimson ? "crimson" : undefined;
+    return { isProtected, teamId };
   }
 
   private sameLocation(a: Vector3, b: Vector3): boolean {
@@ -191,59 +226,21 @@ export class ChestManager {
     this.propertyStore.setJSON(DYNAMIC_KEYS.spawnLocation, this.spawnLocation ?? {});
   }
 
-  private loadLocationsFromProperties(): void {
-    this.crimsonChestLocation = this.propertyStore.getJSON<Vector3>(
-      DYNAMIC_KEYS.chestCrimsonLocation,
-      undefined as any
-    );
-    this.azureChestLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.chestAzureLocation, undefined as any);
-    this.spawnLocation = this.propertyStore.getJSON<Vector3>(DYNAMIC_KEYS.spawnLocation, undefined as any);
-  }
-
-  private parseLocation(key: string): Vector3 | undefined {
-    return this.propertyStore.getJSON<Vector3>(key, undefined as any);
-  }
-
-  private placeChestBlock(dimension: Dimension, location: Vector3, _label: string, facing: "east" | "west"): void {
+  private placeChestBlock(location: Vector3, facing: "east" | "west"): void {
     try {
-      const block = dimension.getBlock(location);
+      const block = world.getDimension("overworld").getBlock(location);
       if (!block) return;
       block.setType("minecraft:chest");
       const permutation = block.permutation.withState("minecraft:cardinal_direction", facing);
       block.setPermutation(permutation as BlockPermutation);
     } catch (err) {
-      this.debugLogger?.warn("Failed to place chest block", _label, err);
+      this.debugLogger?.warn("Failed to place chest block", err);
     }
   }
 
-  private pollChests(): void {
-    if (!this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, false)) return;
-
-    const dim = world.getDimension("overworld");
-    const challenges = this.challengeManager.getAvailableChallenges();
-    if (!challenges.length) return;
-
-    this.checkChestForTeam(dim, "crimson", challenges);
-    this.checkChestForTeam(dim, "azure", challenges);
-  }
-
-  private checkChestForTeam(dimension: Dimension, team: TeamId, challenges: ChallengeRecord[]): void {
-    const loc = this.getChestLocation(team);
-    if (!loc) return;
-    const container = this.getContainerAt(dimension, loc);
-    if (!container) return;
-
-    for (const challenge of challenges) {
-      if (this.challengeManager.validateDeposit(container, challenge)) {
-        this.challengeManager.handleChallengeCompletion(team, challenge, container, loc);
-        break;
-      }
-    }
-  }
-
-  private getContainerAt(dimension: Dimension, location: Vector3): Container | undefined {
+  getContainerAt(location: Vector3): Container | undefined {
     try {
-      const block = dimension.getBlock(location);
+      const block = world.getDimension("overworld").getBlock(location);
       const inventory = block?.getComponent("inventory") as { container?: Container } | undefined;
       return inventory?.container;
     } catch (err) {

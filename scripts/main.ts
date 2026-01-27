@@ -15,8 +15,16 @@ const configManager = new ConfigManager(propertyStore);
 const teamManager = new TeamManager(propertyStore);
 const audioManager = new AudioManager(propertyStore);
 const hudManager = new HUDManager(propertyStore, configManager, teamManager);
-const challengeManager = new ChallengeManager(propertyStore, configManager, teamManager, hudManager, audioManager);
-const chestManager = new ChestManager(propertyStore, challengeManager, teamManager, audioManager);
+const chestManager = new ChestManager(propertyStore, teamManager, audioManager);
+chestManager.initialize();
+const challengeManager = new ChallengeManager(
+  propertyStore,
+  configManager,
+  teamManager,
+  hudManager,
+  audioManager,
+  chestManager
+);
 
 const gameStateManager = new GameStateManager(
   propertyStore,

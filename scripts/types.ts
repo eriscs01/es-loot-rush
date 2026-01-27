@@ -1,6 +1,22 @@
 export type TeamId = "crimson" | "azure";
 
 export type ChallengeDifficulty = "easy" | "medium" | "hard";
+export type ChallengeState = "available" | "completed" | "locked";
+export interface ChallengeDefinition {
+  id: string;
+  title: string;
+  name: string;
+  item: string;
+  count: number;
+  points: number;
+  difficulty: "easy" | "medium" | "hard";
+  variant?: "any";
+}
+
+export interface ChallengeRecord extends ChallengeDefinition {
+  state: ChallengeState;
+  completedBy?: TeamId;
+}
 
 export interface GameConfig {
   easyChallengeCount: number;
