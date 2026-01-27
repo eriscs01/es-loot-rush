@@ -7,7 +7,7 @@ import { TeamManager } from "./TeamManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { removeColorCode } from "../utils/text";
-import { ANY_VARIANTS } from "../config/variants";
+import { MinecraftItemTypes } from "@minecraft/vanilla-data";
 
 export class ChestManager {
   private crimsonChestLocation: Vector3 | undefined;
@@ -87,27 +87,20 @@ export class ChestManager {
   }
 
   private matchesRequirement(item: ItemStack | string, challenge: ChallengeDefinition): boolean {
-    const typeId = typeof item === "string" ? item : item.typeId;
+    const typeId = (typeof item === "string" ? item : item.typeId) as MinecraftItemTypes;
 
-    if (challenge.variant === "any") {
-      const allowed = ANY_VARIANTS[challenge.item];
-      if (allowed) {
-        return allowed.includes(typeId);
-      }
-    }
-    return typeId === challenge.item;
+    const allowed = challenge.variant === "any" ? challenge.items : [challenge.items[0]];
+    return allowed.includes(typeId);
   }
 
   removeChallengeItems(container: Container, challenge: ChallengeDefinition): void {
     let remaining = challenge.count;
     if (container.emptySlotsCount === container.size) return;
 
-    const targetTypes = challenge.variant === "any" ? (ANY_VARIANTS[challenge.item] ?? []) : [challenge.item];
-
     while (remaining > 0) {
       let foundIndex: number | undefined;
 
-      for (const typeId of targetTypes) {
+      for (const typeId of challenge.items) {
         const probe = new ItemStack(typeId, 1);
         const idx = container.find(probe);
         if (idx !== undefined && (foundIndex === undefined || idx < foundIndex)) {
