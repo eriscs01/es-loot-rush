@@ -33,6 +33,13 @@ export class CommandHandler {
     private readonly configManager: ConfigManager,
     private readonly audioManager: AudioManager
   ) {
+    void gameStateManager;
+    void teamManager;
+    void challengeManager;
+    void chestManager;
+    void hudManager;
+    void configManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -192,7 +199,7 @@ export class CommandHandler {
       };
     }
 
-    if (this.gameStateManager.isTeamsFormed()) {
+    if (this.teamManager.isTeamsFormed()) {
       return { status: CustomCommandStatus.Failure, message: "§cTeams already formed. Use lr:reset to reform." };
     }
 
@@ -204,7 +211,7 @@ export class CommandHandler {
   }
 
   handleStart(origin: CustomCommandOrigin): CustomCommandResult {
-    if (!this.gameStateManager.isTeamsFormed()) {
+    if (!this.teamManager.isTeamsFormed()) {
       return { status: CustomCommandStatus.Failure, message: "§cTeams must be formed first! Use lr:teamup." };
     }
     if (this.gameStateManager.isGameActive()) {
@@ -220,8 +227,8 @@ export class CommandHandler {
     this.teamManager.setTeamScore("azure", 0);
     this.challengeManager.resetChallenges();
 
-    this.gameStateManager.startGame();
     const active = this.challengeManager.selectChallenges();
+    this.gameStateManager.startGame(active);
     const players = world.getAllPlayers();
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
@@ -255,7 +262,6 @@ export class CommandHandler {
 
     // Final reveal
     const crimsonIds = this.teamManager.getRoster("crimson");
-    const azureIds = this.teamManager.getRoster("azure");
     players.forEach((p) => {
       const isCrimson = crimsonIds.includes(p.nameTag ?? p.id);
       const title = isCrimson ? "§c§lCRIMSON CRUSADERS" : "§b§lAZURE ARCHITECTS";
@@ -275,11 +281,11 @@ export class CommandHandler {
     await this.delayTicks(60);
     players.forEach((p) => this.teamManager.applyTeamColor(p));
     const center = this.computeCenter(players);
-    const dim = world.getDimension("overworld");
-    this.chestManager.placeChests(center, dim);
+    this.chestManager.placeChests(center);
     this.teamManager.setSpawnPointForAll(players, center);
-    this.gameStateManager.setTeamsFormed(true);
+    this.teamManager.setTeamsFormed(true);
     players.forEach((p) => this.hudManager.clearHUD(p));
+    this.audioManager.playTeamFormationSounds(players);
 
     const crimsonList = this.teamManager.getRoster("crimson");
     const azureList = this.teamManager.getRoster("azure");
@@ -379,7 +385,7 @@ export class CommandHandler {
       return { status: CustomCommandStatus.Failure, message: "§cGame is not active." };
     }
     this.gameStateManager.pauseGame();
-    this.chestManager.stopMonitoring();
+    this.challengeManager.stopMonitoring();
     void origin;
     return { status: CustomCommandStatus.Success, message: "Game paused." };
   }
@@ -389,7 +395,8 @@ export class CommandHandler {
       return { status: CustomCommandStatus.Failure, message: "§cGame is not active." };
     }
     this.gameStateManager.resumeGame();
-    this.chestManager.monitorChests();
+    const active = this.challengeManager.getActiveChallenges();
+    this.challengeManager.monitorCompletion(active);
     void origin;
     return { status: CustomCommandStatus.Success, message: "Game resumed." };
   }

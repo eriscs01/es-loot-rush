@@ -14,6 +14,7 @@ export class ConfigManager {
   private config: GameConfig;
 
   constructor(private readonly propertyStore: PropertyStore) {
+    void propertyStore;
     this.config = { ...DEFAULT_CONFIG };
   }
 

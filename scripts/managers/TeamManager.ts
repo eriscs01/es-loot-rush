@@ -1,4 +1,4 @@
-import { Player, system, Vector3, world } from "@minecraft/server";
+import { Player, PlayerSpawnAfterEvent, system, Vector3, world } from "@minecraft/server";
 import { PropertyStore } from "./PropertyStore";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS } from "../config/constants";
@@ -9,7 +9,7 @@ export class TeamManager {
   private playerTeamCache = new Map<string, TeamId>();
   private crimsonPlayers: string[] = [];
   private azurePlayers: string[] = [];
-  private spawnHandler?: (event: { player: Player }) => void;
+  private spawnHandler?: (_arg0: PlayerSpawnAfterEvent) => void;
   private readonly debugLogger: DebugLogger;
 
   constructor(private readonly propertyStore: PropertyStore) {
@@ -113,7 +113,11 @@ export class TeamManager {
     player.nameTag = `${prefix}${player.nameTag ?? player.id}`;
   }
 
-  private isTeamsFormed(): boolean {
+  setTeamsFormed(flag: boolean): void {
+    this.propertyStore.setBoolean(DYNAMIC_KEYS.teamsFormed, flag);
+  }
+
+  isTeamsFormed(): boolean {
     return this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
   }
 
@@ -141,10 +145,6 @@ export class TeamManager {
 
   getRoster(team: TeamId): string[] {
     return team === "crimson" ? [...this.crimsonPlayers] : [...this.azurePlayers];
-  }
-
-  getRosterCache(): Map<string, TeamId> {
-    return new Map(this.playerTeamCache);
   }
 
   loadRostersFromProperties(): void {

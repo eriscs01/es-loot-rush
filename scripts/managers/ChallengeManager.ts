@@ -1,37 +1,20 @@
-import { Container, ItemStack, system, Vector3, world } from "@minecraft/server";
+import { Container, system, Vector3, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
 import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS } from "../config/constants";
-import { ANY_VARIANTS } from "../config/variants";
-import { TeamId } from "../types";
+import { ChallengeDefinition, ChallengeRecord, TeamId } from "../types";
 import { TeamManager } from "./TeamManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
-
-export type ChallengeState = "available" | "completed" | "locked";
-
-export interface ChallengeDefinition {
-  id: string;
-  title: string;
-  name: string;
-  item: string;
-  count: number;
-  points: number;
-  difficulty: "easy" | "medium" | "hard";
-  variant?: "any";
-}
-
-export interface ChallengeRecord extends ChallengeDefinition {
-  state: ChallengeState;
-  completedBy?: TeamId;
-}
+import { ChestManager } from "./ChestManager";
 
 export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
   private activeChallenges: ChallengeRecord[] = [];
   private completedChallenges: ChallengeRecord[] = [];
+  private monitorHandle?: number;
   private readonly debugLogger: DebugLogger;
 
   constructor(
@@ -39,14 +22,16 @@ export class ChallengeManager {
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager: AudioManager
+    private readonly audioManager: AudioManager,
+    private readonly chestManager: ChestManager
   ) {
+    void configManager;
+    void teamManager;
+    void hudManager;
+    void audioManager;
+    void chestManager;
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
     this.debugLogger = new DebugLogger(propertyStore);
-  }
-
-  setChallengePool(pool: ChallengeDefinition[]): void {
-    this.challengePool = [...pool];
   }
 
   selectChallenges(): ChallengeRecord[] {
@@ -132,6 +117,43 @@ export class ChallengeManager {
     return completed;
   }
 
+  monitorCompletion(challenges: ChallengeRecord[]): void {
+    if (this.monitorHandle !== undefined) return;
+
+    this.monitorHandle = system.runInterval(() => {
+      if (!this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, false)) return;
+
+      if (!challenges.length) return;
+
+      const teams: TeamId[] = ["crimson", "azure"];
+
+      for (const team of teams) {
+        const loc = this.chestManager.getChestLocation(team);
+        if (!loc) return;
+        const container = this.chestManager.getContainerAt(loc);
+        if (!container) return;
+
+        for (const challenge of challenges) {
+          if (
+            this.isChallengeAvailable(challenge.id) &&
+            this.chestManager.validateChestContents(container, challenge)
+          ) {
+            this.handleChallengeCompletion(team, challenge, container, loc);
+            break;
+          }
+        }
+      }
+    }, 10);
+    this.debugLogger?.log("Started completion monitoring");
+  }
+
+  stopMonitoring(): void {
+    if (this.monitorHandle === undefined) return;
+    system.clearRun(this.monitorHandle);
+    this.monitorHandle = undefined;
+    this.debugLogger?.log("Stopped chest monitoring");
+  }
+
   handleChallengeCompletion(
     team: TeamId,
     challenge: ChallengeRecord,
@@ -163,7 +185,7 @@ export class ChallengeManager {
       } catch (err) {
         this.debugLogger?.warn("Failed to spawn completion particle", err);
       }
-      this.removeChallengeItems(container, challenge);
+      this.chestManager.removeChallengeItems(container, challenge);
     }
 
     const active = this.getActiveChallenges();
@@ -192,20 +214,9 @@ export class ChallengeManager {
     this.propertyStore.setString(DYNAMIC_KEYS.completedChallenges, "[]");
   }
 
-  validateChallenge(challenge: ChallengeDefinition, items: unknown): boolean {
-    // Validation will be implemented in Task 1.2 and Task 1.4.
-    void challenge;
-    void items;
-    return false;
-  }
-
   getActiveChallenges(): ChallengeRecord[] {
     this.activeChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.activeChallenges, []);
     return [...this.activeChallenges];
-  }
-
-  getAvailableChallenges(): ChallengeRecord[] {
-    return this.getActiveChallenges().filter((c) => c.state === "available");
   }
 
   getCompletedChallenges(): ChallengeRecord[] {
@@ -219,89 +230,5 @@ export class ChallengeManager {
 
   private persistCompleted(): void {
     this.propertyStore.setJSON(DYNAMIC_KEYS.completedChallenges, this.completedChallenges);
-  }
-
-  validateDeposit(container: Container, challenge: ChallengeDefinition): boolean {
-    const filledSlots = container.size - container.emptySlotsCount;
-    if (filledSlots === 0) {
-      this.debugLogger?.debug(`Validation failed for challenge ${challenge.id}; container empty`);
-      return false;
-    }
-
-    let total = 0;
-    let inspectedFilled = 0;
-    const startSlot = container.firstItem() ?? 0;
-
-    for (let i = startSlot; i < container.size && inspectedFilled < filledSlots; i++) {
-      const slot = container.getSlot(i);
-      if (!slot.hasItem()) continue;
-      inspectedFilled++;
-
-      if (this.matchesRequirement(slot.typeId, challenge)) {
-        total += slot.amount;
-      }
-
-      if (total >= challenge.count) {
-        this.debugLogger?.log(`Validation passed for challenge ${challenge.id}; total=${total}`);
-        return true;
-      }
-    }
-    this.debugLogger?.debug(`Validation failed for challenge ${challenge.id}; total=${total}`);
-    return false;
-  }
-
-  private removeChallengeItems(container: Container, challenge: ChallengeDefinition): void {
-    let remaining = challenge.count;
-    if (container.emptySlotsCount === container.size) return;
-
-    const targetTypes = challenge.variant === "any" ? (ANY_VARIANTS[challenge.item] ?? []) : [challenge.item];
-
-    while (remaining > 0) {
-      let foundIndex: number | undefined;
-
-      for (const typeId of targetTypes) {
-        const probe = new ItemStack(typeId, 1);
-        const idx = container.find(probe);
-        if (idx !== undefined && (foundIndex === undefined || idx < foundIndex)) {
-          foundIndex = idx;
-        }
-      }
-
-      if (foundIndex === undefined) break;
-
-      const slot = container.getSlot(foundIndex);
-      if (!slot.hasItem()) {
-        slot.setItem(undefined);
-        continue;
-      }
-
-      const take = Math.min(slot.amount, remaining);
-      remaining -= take;
-
-      const newAmount = slot.amount - take;
-      if (newAmount > 0) {
-        slot.amount = newAmount;
-      } else {
-        slot.setItem(undefined);
-      }
-    }
-
-    if (remaining > 0) {
-      this.debugLogger?.warn(`Failed to consume full requirement for ${challenge.id}; remaining=${remaining}`);
-    } else {
-      this.debugLogger?.log(`Consumed items for challenge ${challenge.id}`);
-    }
-  }
-
-  private matchesRequirement(item: ItemStack | string, challenge: ChallengeDefinition): boolean {
-    const typeId = typeof item === "string" ? item : item.typeId;
-
-    if (challenge.variant === "any") {
-      const allowed = ANY_VARIANTS[challenge.item];
-      if (allowed) {
-        return allowed.includes(typeId);
-      }
-    }
-    return typeId === challenge.item;
   }
 }

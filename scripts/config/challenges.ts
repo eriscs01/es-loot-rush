@@ -1,5 +1,5 @@
-import { ChallengeDefinition } from "../managers/ChallengeManager";
 import { MinecraftItemTypes } from "@minecraft/vanilla-data";
+import { ChallengeDefinition } from "../types";
 
 export const CHALLENGES: Record<string, ChallengeDefinition[]> = {
   easy: [

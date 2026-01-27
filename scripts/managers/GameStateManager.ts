@@ -3,12 +3,12 @@ import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
 import { TeamManager } from "./TeamManager";
 import { ChallengeManager } from "./ChallengeManager";
+import { ChallengeRecord } from "../types";
 import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
-import { GameConfig } from "../types";
-import { BACKUP_PREFIX, BACKUP_TIMESTAMP, DYNAMIC_KEYS } from "../config/constants";
+import { DYNAMIC_KEYS } from "../config/constants";
 
 export class GameStateManager {
   private gameActive = false;
@@ -33,6 +33,12 @@ export class GameStateManager {
     private readonly hudManager: HUDManager,
     private readonly audioManager?: AudioManager
   ) {
+    void configManager;
+    void teamManager;
+    void challengeManager;
+    void chestManager;
+    void hudManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -52,7 +58,7 @@ export class GameStateManager {
     });
   }
 
-  startGame(): void {
+  startGame(challenges: ChallengeRecord[]): void {
     this.propertyStore.setBoolean(DYNAMIC_KEYS.gameActive, true);
     this.propertyStore.setBoolean(DYNAMIC_KEYS.teamsFormed, true);
     this.propertyStore.setBoolean(DYNAMIC_KEYS.gamePaused, false);
@@ -70,7 +76,7 @@ export class GameStateManager {
     this.propertyStore.setString(DYNAMIC_KEYS.completedChallenges, "[]");
     this.startRoundTimer();
     this.initiateHUDState();
-    this.chestManager.monitorChests();
+    this.challengeManager.monitorCompletion(challenges);
     this.teamManager.registerJoinHandlers();
     this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
   }
@@ -85,7 +91,7 @@ export class GameStateManager {
     this.clearPauseEffects();
     this.updatePauseHUD(false);
     this.stopRoundTimer();
-    this.chestManager.stopMonitoring();
+    this.challengeManager.stopMonitoring();
     this.teamManager.unregisterJoinHandlers();
     this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
@@ -177,6 +183,7 @@ export class GameStateManager {
 
     this.challengeManager.resetChallenges();
     const challenges = this.challengeManager.selectChallenges();
+    this.challengeManager.monitorCompletion(challenges);
 
     const players = world.getAllPlayers();
     world.sendMessage(`§6[LOOT RUSH] §fRound ${this.currentRound} begins!`);
@@ -193,24 +200,8 @@ export class GameStateManager {
     this.transitionToNextRound();
   }
 
-  getGameConfig(): GameConfig {
-    return this.configManager.getConfig();
-  }
-
   isGameActive(): boolean {
     return this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, this.gameActive);
-  }
-
-  isPaused(): boolean {
-    return this.gamePaused;
-  }
-
-  setTeamsFormed(flag: boolean): void {
-    this.propertyStore.setBoolean(DYNAMIC_KEYS.teamsFormed, flag);
-  }
-
-  isTeamsFormed(): boolean {
-    return this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
   }
 
   private registerPauseGuards(): void {

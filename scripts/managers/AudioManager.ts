@@ -20,7 +20,7 @@ export class AudioManager {
   };
 
   playTeamFormationSounds(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "note.pling"));
+    players.forEach((player) => this.playSound(player, "entity.wither.spawn"));
   }
 
   playTeamShuffleTick(players: Player[]): void {
@@ -53,7 +53,7 @@ export class AudioManager {
   }
 
   playVictorySounds(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "random.levelup"));
+    players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
   }
 
   playStartHorn(players: Player[]): void {
@@ -61,10 +61,6 @@ export class AudioManager {
   }
 
   playAccessDenied(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "note.bass"));
-  }
-
-  playInvalidDeposit(players: Player[]): void {
     players.forEach((player) => this.playSound(player, "note.bass"));
   }
 

@@ -1,10 +1,10 @@
 import { Player, system } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
-import { ChallengeRecord } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
+import { ChallengeRecord } from "../types";
 
 export class HUDManager {
   private playerQueues: Map<string, string[]> = new Map();
@@ -16,6 +16,8 @@ export class HUDManager {
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager
   ) {
+    void configManager;
+    void teamManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 

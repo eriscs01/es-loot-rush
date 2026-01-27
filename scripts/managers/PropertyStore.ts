@@ -13,7 +13,10 @@ export class PropertyStore {
   constructor(
     private readonly debugLogger?: DebugLogger,
     private readonly flushIntervalTicks = 200
-  ) {}
+  ) {
+    void debugLogger;
+    void flushIntervalTicks;
+  }
 
   initialize(): void {
     world.afterEvents.worldLoad.subscribe(() => {
