@@ -2,6 +2,7 @@ import { Player, system } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
 import { TeamManager } from "./TeamManager";
+import { ScoreboardManager } from "./ScoreboardManager";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
 import { ChallengeRecord } from "../types";
@@ -14,10 +15,12 @@ export class HUDManager {
   constructor(
     private readonly propertyStore: PropertyStore,
     private readonly configManager: ConfigManager,
-    private readonly teamManager: TeamManager
+    private readonly teamManager: TeamManager,
+    private readonly scoreboardManager: ScoreboardManager
   ) {
     void configManager;
     void teamManager;
+    void scoreboardManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -67,20 +70,18 @@ export class HUDManager {
     this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
   }
 
-  updateScore(player: Player, team: string, score: number): void {
+  updateScore(_player: Player, team: string, score: number): void {
     if (!this.isGameActive()) return;
-    const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
-    this.setTitle(player, `update:eslr:score${team}:${teamLabel} - ${score}`);
-    this.debugLogger?.log(`HUD score update for ${player.nameTag}: ${team} ${score}`);
+    this.scoreboardManager.updateScore(team as "crimson" | "azure", score);
+    this.debugLogger?.log(`Scoreboard score update: ${team} ${score}`);
   }
 
-  updateScores(player: Player): void {
+  updateScores(_player: Player): void {
     if (!this.isGameActive()) return;
     const crimson = this.teamManager?.getTeamScore("crimson") ?? 0;
     const azure = this.teamManager?.getTeamScore("azure") ?? 0;
-    this.setTitle(player, `update:eslr:scorecrimson:§cCrimson Crusaders - ${crimson}`);
-    this.setTitle(player, `update:eslr:scoreazure:§bAzure Architects - ${azure}`);
-    this.debugLogger?.log(`HUD score update for ${player.nameTag}: Crimson ${crimson}, Azure ${azure}`);
+    this.scoreboardManager.updateScores(crimson, azure);
+    this.debugLogger?.log(`Scoreboard scores update: Crimson ${crimson}, Azure ${azure}`);
   }
 
   updateRoundInfo(player: Player): void {
@@ -105,8 +106,6 @@ export class HUDManager {
     const prefixes = [
       "update:eslr:round:",
       "update:eslr:timer:",
-      "update:eslr:scorecrimson:",
-      "update:eslr:scoreazure:",
       "update:eslr:chheader:",
       "update:eslr:chlist0:",
       "update:eslr:chlist1:",

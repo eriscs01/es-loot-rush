@@ -31,8 +31,6 @@
     "controls": [
       { "round_grid@round_indicator.round_grid": {} },
       { "timer_grid@timer_indicator.timer_grid": {} },
-      { "score_azure_grid@score_azure_indicator.score_azure_grid": {} },
-      { "score_crimson_grid@score_crimson_indicator.score_crimson_grid": {} },
       { "chheader_grid@chheader_indicator.chheader_grid": {} },
       { "chlist0_grid@chlist0_indicator.chlist0_grid": {} },
       { "chlist1_grid@chlist1_indicator.chlist1_grid": {} },

@@ -7,6 +7,7 @@ import { HUDManager } from "./managers/HUDManager";
 import { CommandHandler } from "./managers/CommandHandler";
 import { ConfigManager } from "./managers/ConfigManager";
 import { AudioManager } from "./managers/AudioManager";
+import { ScoreboardManager } from "./managers/ScoreboardManager";
 
 const propertyStore = new PropertyStore();
 propertyStore.initialize();
@@ -14,7 +15,8 @@ propertyStore.initialize();
 const configManager = new ConfigManager(propertyStore);
 const teamManager = new TeamManager(propertyStore);
 const audioManager = new AudioManager(propertyStore);
-const hudManager = new HUDManager(propertyStore, configManager, teamManager);
+const scoreboardManager = new ScoreboardManager(propertyStore);
+const hudManager = new HUDManager(propertyStore, configManager, teamManager, scoreboardManager);
 const chestManager = new ChestManager(propertyStore, teamManager, audioManager);
 chestManager.initialize();
 const challengeManager = new ChallengeManager(
@@ -33,7 +35,8 @@ const gameStateManager = new GameStateManager(
   challengeManager,
   chestManager,
   hudManager,
-  audioManager
+  audioManager,
+  scoreboardManager
 );
 gameStateManager.initialize();
 
@@ -45,6 +48,7 @@ const commandHandler = new CommandHandler(
   chestManager,
   hudManager,
   configManager,
-  audioManager
+  audioManager,
+  scoreboardManager
 );
 commandHandler.registerCommands();

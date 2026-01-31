@@ -7,6 +7,7 @@ import { ChallengeRecord } from "../types";
 import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
+import { ScoreboardManager } from "./ScoreboardManager";
 import { DebugLogger } from "./DebugLogger";
 import { DYNAMIC_KEYS } from "../config/constants";
 
@@ -31,7 +32,8 @@ export class GameStateManager {
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager?: AudioManager
+    private readonly audioManager: AudioManager | undefined,
+    private readonly scoreboardManager: ScoreboardManager
   ) {
     void configManager;
     void teamManager;
@@ -39,6 +41,7 @@ export class GameStateManager {
     void chestManager;
     void hudManager;
     void audioManager;
+    void scoreboardManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -78,6 +81,16 @@ export class GameStateManager {
     this.initiateHUDState();
     this.challengeManager.monitorCompletion(challenges);
     this.teamManager.registerJoinHandlers();
+
+    // Initialize scoreboard and summon dummies
+    this.scoreboardManager.initializeScoreboard();
+    const spawnLoc = this.propertyStore.getJSON(DYNAMIC_KEYS.spawnLocation, undefined as any);
+    if (spawnLoc) {
+      this.scoreboardManager.summonDummies(spawnLoc);
+    }
+    this.scoreboardManager.showScoreboard();
+    this.scoreboardManager.updateScores(0, 0);
+
     this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
   }
 
@@ -93,6 +106,10 @@ export class GameStateManager {
     this.stopRoundTimer();
     this.challengeManager.stopMonitoring();
     this.teamManager.unregisterJoinHandlers();
+
+    // Hide scoreboard on game end
+    this.scoreboardManager.hideScoreboard();
+
     this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
       this.announceWinner();
@@ -117,6 +134,9 @@ export class GameStateManager {
     this.challengeManager.resetChallenges();
     this.teamManager.clearTeams();
     this.chestManager.clearChestReferences();
+
+    // Reset scoreboard
+    this.scoreboardManager.resetScoreboard();
 
     world.getAllPlayers().forEach((p) => {
       this.hudManager.clearHUD(p);

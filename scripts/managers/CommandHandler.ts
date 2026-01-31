@@ -16,6 +16,7 @@ import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
+import { ScoreboardManager } from "./ScoreboardManager";
 import { TeamId } from "../types";
 import { DebugLogger } from "./DebugLogger";
 import { PropertyStore } from "./PropertyStore";
@@ -31,7 +32,8 @@ export class CommandHandler {
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
-    private readonly audioManager: AudioManager
+    private readonly audioManager: AudioManager,
+    private readonly scoreboardManager: ScoreboardManager
   ) {
     void gameStateManager;
     void teamManager;
@@ -40,6 +42,7 @@ export class CommandHandler {
     void hudManager;
     void configManager;
     void audioManager;
+    void scoreboardManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
