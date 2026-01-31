@@ -170,7 +170,7 @@ export class BookManager {
       const teamsFormed = this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
 
       if (!teamsFormed) {
-        player.sendMessage("§6[LOOT RUSH] §cGame hasn't started yet. Use the book after teams are formed.");
+        player.sendMessage("§6[LOOT RUSH] §cTeams haven't been formed yet. Use the book after teams are formed.");
         return;
       }
 

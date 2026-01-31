@@ -510,6 +510,9 @@ export class CommandHandler {
   }
 
   handleGiveBook(origin: CustomCommandOrigin): CustomCommandResult {
+    if (!this.bookManager) {
+      return { status: CustomCommandStatus.Failure, message: "§cBook manager not available." };
+    }
     this.bookManager.giveBookToAllPlayers();
     void origin;
     return { status: CustomCommandStatus.Success, message: "§aGave challenges book to all players." };
