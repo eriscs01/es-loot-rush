@@ -82,12 +82,8 @@ export class GameStateManager {
     this.challengeManager.monitorCompletion(challenges);
     this.teamManager.registerJoinHandlers();
 
-    // Initialize scoreboard and summon dummies
+    // Initialize and show scoreboard
     this.scoreboardManager.initializeScoreboard();
-    const spawnLoc = this.propertyStore.getJSON(DYNAMIC_KEYS.spawnLocation, undefined as any);
-    if (spawnLoc) {
-      this.scoreboardManager.summonDummies(spawnLoc);
-    }
     this.scoreboardManager.showScoreboard();
     this.scoreboardManager.updateScores(0, 0);
 
