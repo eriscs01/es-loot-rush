@@ -1,4 +1,4 @@
-import { world, Player, ItemStack, system } from "@minecraft/server";
+import { world, Player, ItemStack, system, ItemUseBeforeEvent } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { ChallengeManager } from "./ChallengeManager";
 import { PropertyStore } from "./PropertyStore";
@@ -9,10 +9,11 @@ import { ChallengeRecord } from "../types";
 export class BookManager {
   private readonly debugLogger: DebugLogger;
   private readonly bookItemId = "minecraft:writable_book";
-  private bookUseHandler?: (_arg: any) => void;
+  private bookUseHandler?: (_event: ItemUseBeforeEvent) => void;
 
   constructor(
     private readonly propertyStore: PropertyStore,
+    // Used in showChallengesForm() to get active challenges
     // eslint-disable-next-line no-unused-vars
     private readonly challengeManager: ChallengeManager
   ) {
@@ -24,8 +25,20 @@ export class BookManager {
    */
   giveBookToAllPlayers(): void {
     const players = world.getAllPlayers();
-    players.forEach((player) => this.giveBookToPlayer(player));
-    this.debugLogger?.log("Gave challenges book to all players");
+    let successCount = 0;
+    let failCount = 0;
+
+    players.forEach((player) => {
+      try {
+        this.giveBookToPlayer(player);
+        successCount++;
+      } catch (err) {
+        failCount++;
+        this.debugLogger?.warn("Failed to give book to player", player.nameTag, err);
+      }
+    });
+
+    this.debugLogger?.log(`Gave challenges book to ${successCount}/${players.length} players (${failCount} failed)`);
   }
 
   /**
@@ -71,7 +84,7 @@ export class BookManager {
       return;
     }
 
-    this.bookUseHandler = (event: any) => {
+    this.bookUseHandler = (event: ItemUseBeforeEvent) => {
       const player = event.source as Player;
       const item = event.itemStack;
 
@@ -93,10 +106,10 @@ export class BookManager {
 
   /**
    * Unregisters the book event handler
+   * Note: The Minecraft API doesn't provide a direct way to unsubscribe from events.
+   * The handler will remain registered but will be inactive when bookUseHandler is undefined.
    */
   unregisterBookHandler(): void {
-    // Note: Minecraft API doesn't provide a direct way to unsubscribe from events
-    // We'll rely on the conditional check in the handler
     this.bookUseHandler = undefined;
     this.debugLogger?.log("Unregistered book interaction handler");
   }
@@ -167,7 +180,9 @@ export class BookManager {
     }
 
     const points = `§e${challenge.points}pts`;
-    const itemName = challenge.name || challenge.title;
+    // ChallengeRecord has both 'name' (formatted item name) and 'title' (challenge category)
+    // Use 'name' for display as it's the full formatted item description
+    const itemName = challenge.name;
     const count = challenge.count > 1 ? `${challenge.count}x ` : "";
 
     return `${prefix} ${count}${itemName} §7- ${points}${suffix}`;
