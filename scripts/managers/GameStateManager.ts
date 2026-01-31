@@ -190,7 +190,6 @@ export class GameStateManager {
     players.forEach((p) => {
       this.hudManager.updateRoundInfo(p);
       this.hudManager.updateTimer(p);
-      this.hudManager.updateChallenges(p, challenges);
     });
     this.audioManager?.playStartHorn(players);
   }
@@ -440,12 +439,10 @@ export class GameStateManager {
   private initiateHUDState(): void {
     system.run(() => {
       const players = world.getAllPlayers();
-      const challenges = this.challengeManager.getActiveChallenges();
       players.forEach((p) => {
         this.hudManager.updateRoundInfo(p);
         this.hudManager.updateTimer(p);
         this.hudManager.updateScores(p);
-        this.hudManager.updateChallenges(p, challenges);
       });
     });
   }

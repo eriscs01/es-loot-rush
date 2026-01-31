@@ -32,18 +32,7 @@
       { "round_grid@round_indicator.round_grid": {} },
       { "timer_grid@timer_indicator.timer_grid": {} },
       { "score_azure_grid@score_azure_indicator.score_azure_grid": {} },
-      { "score_crimson_grid@score_crimson_indicator.score_crimson_grid": {} },
-      { "chheader_grid@chheader_indicator.chheader_grid": {} },
-      { "chlist0_grid@chlist0_indicator.chlist0_grid": {} },
-      { "chlist1_grid@chlist1_indicator.chlist1_grid": {} },
-      { "chlist2_grid@chlist2_indicator.chlist2_grid": {} },
-      { "chlist3_grid@chlist3_indicator.chlist3_grid": {} },
-      { "chlist4_grid@chlist4_indicator.chlist4_grid": {} },
-      { "chlist5_grid@chlist5_indicator.chlist5_grid": {} },
-      { "chlist6_grid@chlist6_indicator.chlist6_grid": {} },
-      { "chlist7_grid@chlist7_indicator.chlist7_grid": {} },
-      { "chlist8_grid@chlist8_indicator.chlist8_grid": {} },
-      { "chlist9_grid@chlist9_indicator.chlist9_grid": {} }
+      { "score_crimson_grid@score_crimson_indicator.score_crimson_grid": {} }
     ]
   }
 }

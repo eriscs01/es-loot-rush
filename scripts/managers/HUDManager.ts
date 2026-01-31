@@ -4,7 +4,6 @@ import { PropertyStore } from "./PropertyStore";
 import { TeamManager } from "./TeamManager";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
-import { ChallengeRecord } from "../types";
 
 export class HUDManager {
   private playerQueues: Map<string, string[]> = new Map();
@@ -28,43 +27,6 @@ export class HUDManager {
     const formatted = this.formatTime(remainingTicks);
     this.setTitle(player, `update:eslr:timer:Timer ${formatted}`);
     this.debugLogger?.debug(`HUD timer update for ${player.nameTag}: ${formatted}`);
-  }
-
-  completeChallenge(player: Player, challengeIndex: number, challenge: ChallengeRecord, completedByTeam: string): void {
-    if (!this.isGameActive()) return;
-
-    const completedBy = completedByTeam === "crimson" ? "Crimson" : completedByTeam === "azure" ? "Azure" : undefined;
-    const ownerLabel = completedBy ? ` §7(${completedBy})` : " §7(Claimed)";
-    const line = `§a✓ ${challenge.name} ${ownerLabel}`;
-
-    this.setTitle(player, `update:eslr:chlist${challengeIndex}:${line}`);
-    this.debugLogger?.log(`Challenge ${challenge.id} marked complete in HUD for ${player.nameTag}`);
-  }
-
-  updateChallenges(player: Player, challenges: ChallengeRecord[]): void {
-    if (!this.isGameActive()) return;
-
-    // Header
-    this.setTitle(player, "update:eslr:chheader:§6§lCHALLENGES");
-
-    for (let i = 0; i < 10; i++) {
-      const challenge = challenges[i];
-      if (!challenge) {
-        this.setTitle(player, `update:eslr:chlist${i}:`);
-        continue;
-      }
-
-      const claimed = challenge.state === "completed";
-      const completedBy =
-        challenge.completedBy === "crimson" ? "§cCrimson" : challenge.completedBy ? "§bAzure" : undefined;
-      const statusPrefix = claimed ? "§a✓" : "§f○";
-      const pointsLabel = `§e(${challenge.points}pts)`;
-      const ownerLabel = claimed && completedBy ? ` §7(${completedBy}§7)` : " §7(Claimed)";
-      const suffix = claimed ? ownerLabel : pointsLabel;
-      const line = `${statusPrefix} ${challenge.name} ${suffix}`;
-      this.setTitle(player, `update:eslr:chlist${i}:${line}`);
-    }
-    this.debugLogger?.log(`HUD challenges update for ${player.nameTag}: count=${challenges.length}`);
   }
 
   updateScore(player: Player, team: string, score: number): void {
@@ -107,17 +69,6 @@ export class HUDManager {
       "update:eslr:timer:",
       "update:eslr:scorecrimson:",
       "update:eslr:scoreazure:",
-      "update:eslr:chheader:",
-      "update:eslr:chlist0:",
-      "update:eslr:chlist1:",
-      "update:eslr:chlist2:",
-      "update:eslr:chlist3:",
-      "update:eslr:chlist4:",
-      "update:eslr:chlist5:",
-      "update:eslr:chlist6:",
-      "update:eslr:chlist7:",
-      "update:eslr:chlist8:",
-      "update:eslr:chlist9:",
     ];
     system.run(() => {
       prefixes.forEach((prefix) => this.setTitle(player, prefix));

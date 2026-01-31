@@ -189,16 +189,9 @@ export class ChallengeManager {
       this.chestManager.removeChallengeItems(container, challenge);
     }
 
-    const active = this.getActiveChallenges();
     const newScore = this.teamManager.getTeamScore(team);
-    const challengeIndex = active.findIndex((c) => c.id === challenge.id);
 
     players.forEach((p) => {
-      if (challengeIndex !== -1 && challengeIndex < 10) {
-        system.runTimeout(() => {
-          this.hudManager.completeChallenge(p, challengeIndex, challenge, team);
-        }, 5);
-      }
       system.runTimeout(() => {
         this.hudManager.updateScore(p, team, newScore);
       }, 10);
