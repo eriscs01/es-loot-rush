@@ -7,6 +7,7 @@ import { HUDManager } from "./managers/HUDManager";
 import { CommandHandler } from "./managers/CommandHandler";
 import { ConfigManager } from "./managers/ConfigManager";
 import { AudioManager } from "./managers/AudioManager";
+import { BookManager } from "./managers/BookManager";
 
 const propertyStore = new PropertyStore();
 propertyStore.initialize();
@@ -25,6 +26,9 @@ const challengeManager = new ChallengeManager(
   audioManager,
   chestManager
 );
+
+const bookManager = new BookManager(propertyStore, challengeManager);
+bookManager.registerBookHandler();
 
 const gameStateManager = new GameStateManager(
   propertyStore,
@@ -45,6 +49,7 @@ const commandHandler = new CommandHandler(
   chestManager,
   hudManager,
   configManager,
-  audioManager
+  audioManager,
+  bookManager
 );
 commandHandler.registerCommands();

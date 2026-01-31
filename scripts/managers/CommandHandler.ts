@@ -16,6 +16,7 @@ import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
+import { BookManager } from "./BookManager";
 import { TeamId } from "../types";
 import { DebugLogger } from "./DebugLogger";
 import { PropertyStore } from "./PropertyStore";
@@ -31,7 +32,8 @@ export class CommandHandler {
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
-    private readonly audioManager: AudioManager
+    private readonly audioManager: AudioManager,
+    private readonly bookManager: BookManager
   ) {
     void gameStateManager;
     void teamManager;
@@ -40,6 +42,7 @@ export class CommandHandler {
     void hudManager;
     void configManager;
     void audioManager;
+    void bookManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -229,6 +232,10 @@ export class CommandHandler {
 
     const active = this.challengeManager.selectChallenges();
     this.gameStateManager.startGame(active);
+
+    // Give challenges book to all players
+    this.bookManager.giveBookToAllPlayers();
+
     const players = world.getAllPlayers();
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
