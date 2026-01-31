@@ -7,6 +7,7 @@ import { ChallengeRecord } from "../types";
 import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
+import { BookManager } from "./BookManager";
 import { DebugLogger } from "./DebugLogger";
 import { DYNAMIC_KEYS } from "../config/constants";
 
@@ -31,7 +32,8 @@ export class GameStateManager {
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager?: AudioManager
+    private readonly audioManager?: AudioManager,
+    private readonly bookManager?: BookManager
   ) {
     void configManager;
     void teamManager;
@@ -39,6 +41,7 @@ export class GameStateManager {
     void chestManager;
     void hudManager;
     void audioManager;
+    void bookManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -93,6 +96,7 @@ export class GameStateManager {
     this.stopRoundTimer();
     this.challengeManager.stopMonitoring();
     this.teamManager.unregisterJoinHandlers();
+    this.bookManager?.removeBooksFromAllPlayers();
     this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
       this.announceWinner();
@@ -117,6 +121,7 @@ export class GameStateManager {
     this.challengeManager.resetChallenges();
     this.teamManager.clearTeams();
     this.chestManager.clearChestReferences();
+    this.bookManager?.removeBooksFromAllPlayers();
 
     world.getAllPlayers().forEach((p) => {
       this.hudManager.clearHUD(p);

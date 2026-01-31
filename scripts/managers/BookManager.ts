@@ -21,6 +21,53 @@ export class BookManager {
   }
 
   /**
+   * Removes the challenges book from all players
+   */
+  removeBooksFromAllPlayers(): void {
+    const players = world.getAllPlayers();
+    let removedCount = 0;
+
+    players.forEach((player) => {
+      try {
+        if (this.removeBookFromPlayer(player)) {
+          removedCount++;
+        }
+      } catch (err) {
+        this.debugLogger?.warn("Failed to remove book from player", player.nameTag, err);
+      }
+    });
+
+    this.debugLogger?.log(`Removed challenges book from ${removedCount}/${players.length} players`);
+  }
+
+  /**
+   * Removes the challenges book from a specific player
+   * @returns true if book was found and removed, false otherwise
+   */
+  removeBookFromPlayer(player: Player): boolean {
+    try {
+      const inventory = player.getComponent("inventory");
+      if (!inventory?.container) {
+        return false;
+      }
+
+      const container = inventory.container;
+      for (let i = 0; i < container.size; i++) {
+        const item = container.getItem(i);
+        if (item?.typeId === this.bookItemId && item.nameTag === "§6Challenges Book") {
+          // Remove the book
+          container.setItem(i, undefined);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      this.debugLogger?.warn("Failed to remove book from player", player.nameTag, err);
+      return false;
+    }
+  }
+
+  /**
    * Gives the challenges book to all players
    */
   giveBookToAllPlayers(): void {
@@ -119,6 +166,14 @@ export class BookManager {
    */
   private async showChallengesForm(player: Player): Promise<void> {
     try {
+      // Check if teams are formed (game setup has started)
+      const teamsFormed = this.propertyStore.getBoolean(DYNAMIC_KEYS.teamsFormed, false);
+
+      if (!teamsFormed) {
+        player.sendMessage("§6[LOOT RUSH] §cGame hasn't started yet. Use the book after teams are formed.");
+        return;
+      }
+
       const gameActive = this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, false);
 
       if (!gameActive) {

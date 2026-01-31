@@ -186,6 +186,16 @@ export class CommandHandler {
         },
         this.handleConfigReset.bind(this)
       );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:givebook",
+          description: "Give challenges book to all players",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        this.handleGiveBook.bind(this)
+      );
     });
   }
 
@@ -497,5 +507,11 @@ export class CommandHandler {
     this.configManager.saveConfig();
     void origin;
     return { status: CustomCommandStatus.Success, message: "§aConfiguration reset to defaults." };
+  }
+
+  handleGiveBook(origin: CustomCommandOrigin): CustomCommandResult {
+    this.bookManager.giveBookToAllPlayers();
+    void origin;
+    return { status: CustomCommandStatus.Success, message: "§aGave challenges book to all players." };
   }
 }

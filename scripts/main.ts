@@ -37,7 +37,8 @@ const gameStateManager = new GameStateManager(
   challengeManager,
   chestManager,
   hudManager,
-  audioManager
+  audioManager,
+  bookManager
 );
 gameStateManager.initialize();
 
