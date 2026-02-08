@@ -7,7 +7,7 @@ const DEFAULT_CONFIG: GameConfig = {
   mediumChallengeCount: 3,
   hardChallengeCount: 1,
   totalRounds: 4,
-  roundDurationTicks: 18000,
+  roundDurationTicks: 20 * 60 * 15, // 20 ticks in 60 seconds
 };
 
 export class ConfigManager {

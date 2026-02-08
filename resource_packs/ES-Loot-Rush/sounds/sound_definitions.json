@@ -1,0 +1,11 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "challenge.complete": {
+      "category": "ui",
+      "max_distance": null,
+      "min_distance": null,
+      "sounds": ["sounds/challenge_complete"]
+    }
+  }
+}

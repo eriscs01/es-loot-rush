@@ -5,10 +5,10 @@ import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { ChallengeDefinition, ChallengeRecord, TeamId } from "../types";
 import { TeamManager } from "./TeamManager";
-import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { ChestManager } from "./ChestManager";
+import { ScoreboardManager } from "./ScoreboardManager";
 
 export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
@@ -21,15 +21,15 @@ export class ChallengeManager {
     private readonly propertyStore: PropertyStore,
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager,
-    private readonly hudManager: HUDManager,
     private readonly audioManager: AudioManager,
-    private readonly chestManager: ChestManager
+    private readonly chestManager: ChestManager,
+    private readonly scoreboardManager: ScoreboardManager
   ) {
     void configManager;
     void teamManager;
-    void hudManager;
     void audioManager;
     void chestManager;
+    void scoreboardManager;
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
     this.debugLogger = new DebugLogger(propertyStore);
   }
@@ -190,12 +190,9 @@ export class ChallengeManager {
     }
 
     const newScore = this.teamManager.getTeamScore(team);
-
-    players.forEach((p) => {
-      system.runTimeout(() => {
-        this.hudManager.updateScore(p, team, newScore);
-      }, 10);
-    });
+    const crimson = this.teamManager.getTeamScore("crimson");
+    const azure = this.teamManager.getTeamScore("azure");
+    this.scoreboardManager.updateScores(crimson, azure);
 
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
     return true;

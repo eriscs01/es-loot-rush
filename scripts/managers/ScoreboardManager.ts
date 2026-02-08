@@ -23,7 +23,7 @@ export class ScoreboardManager {
           world.scoreboard.removeObjective(existing);
         }
         // Create new scoreboard objective
-        const objective = world.scoreboard.addObjective(this.objectiveName, "§6§lLOOT RUSH");
+        const objective = world.scoreboard.addObjective(this.objectiveName, "§lLOOT RUSH");
         // Set display slot to sidebar
         objective.setScore("§cCrimson Crusaders", 0);
         objective.setScore("§bAzure Architects", 0);

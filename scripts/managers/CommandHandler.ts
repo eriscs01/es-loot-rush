@@ -13,7 +13,6 @@ import { GameStateManager } from "./GameStateManager";
 import { TeamManager } from "./TeamManager";
 import { ChallengeManager } from "./ChallengeManager";
 import { ChestManager } from "./ChestManager";
-import { HUDManager } from "./HUDManager";
 import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
 import { ScoreboardManager } from "./ScoreboardManager";
@@ -31,7 +30,6 @@ export class CommandHandler {
     private readonly teamManager: TeamManager,
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
-    private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
     private readonly audioManager: AudioManager,
     private readonly scoreboardManager: ScoreboardManager,
@@ -41,7 +39,6 @@ export class CommandHandler {
     void teamManager;
     void challengeManager;
     void chestManager;
-    void hudManager;
     void configManager;
     void audioManager;
     void scoreboardManager;
@@ -291,7 +288,7 @@ export class CommandHandler {
           stayDuration: 90,
           fadeOutDuration: 10,
         });
-        this.audioManager.playTeamReveal([p]);
+        this.audioManager.playTeamFormationSounds([p]);
       } catch (err) {
         this.debugLogger.warn("Failed to show reveal title", p.nameTag, err);
       }
@@ -304,8 +301,6 @@ export class CommandHandler {
     this.chestManager.placeChests(center);
     this.teamManager.setSpawnPointForAll(players, center);
     this.teamManager.setTeamsFormed(true);
-    players.forEach((p) => this.hudManager.clearHUD(p));
-    this.audioManager.playTeamFormationSounds(players);
 
     const crimsonList = this.teamManager.getRoster("crimson");
     const azureList = this.teamManager.getRoster("azure");
@@ -394,8 +389,9 @@ export class CommandHandler {
     }
 
     this.teamManager.setTeamScore(team, points);
-    const players = world.getAllPlayers();
-    players.forEach((p) => this.hudManager.updateScores(p));
+    const crimson = this.teamManager.getTeamScore("crimson");
+    const azure = this.teamManager.getTeamScore("azure");
+    this.scoreboardManager.updateScores(crimson, azure);
     void origin;
     return { status: CustomCommandStatus.Success, message: `Set ${team} score to ${points}.` };
   }
