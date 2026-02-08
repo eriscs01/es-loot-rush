@@ -1,6 +1,7 @@
 import { world, Player, ItemStack, system, ItemUseBeforeEvent } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { ChallengeManager } from "./ChallengeManager";
+import { TeamManager } from "./TeamManager";
 import { PropertyStore } from "./PropertyStore";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
@@ -17,7 +18,9 @@ export class BookManager {
     private readonly propertyStore: PropertyStore,
     // Used in showChallengesForm() to get active challenges
     // eslint-disable-next-line no-unused-vars
-    private readonly challengeManager: ChallengeManager
+    private readonly challengeManager: ChallengeManager,
+    // eslint-disable-next-line no-unused-vars
+    private readonly teamManager: TeamManager
   ) {
     this.debugLogger = new DebugLogger(propertyStore);
   }
@@ -26,7 +29,7 @@ export class BookManager {
    * Removes the challenge codex from all players
    */
   removeBooksFromAllPlayers(): void {
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     let removedCount = 0;
 
     players.forEach((player) => {
@@ -73,7 +76,7 @@ export class BookManager {
    * Gives the challenge codex to all players
    */
   giveBookToAllPlayers(): void {
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     let successCount = 0;
     let failCount = 0;
 

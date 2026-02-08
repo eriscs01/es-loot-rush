@@ -246,7 +246,7 @@ export class CommandHandler {
     // Give challenges book to all players
     this.bookManager.giveBookToAllPlayers();
 
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
     world.sendMessage(`Round 1 with ${active.length} challenges. Duration: ${durationInMins} minutes.`);

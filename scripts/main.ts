@@ -27,7 +27,7 @@ const challengeManager = new ChallengeManager(
   scoreboardManager
 );
 
-const bookManager = new BookManager(propertyStore, challengeManager);
+const bookManager = new BookManager(propertyStore, challengeManager, teamManager);
 
 const gameStateManager = new GameStateManager(
   propertyStore,

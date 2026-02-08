@@ -1,4 +1,4 @@
-import { Player, PlayerLeaveAfterEvent, PlayerSpawnAfterEvent, system, world } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 import { ConfigManager } from "./ConfigManager";
 import { PropertyStore } from "./PropertyStore";
 import { TeamManager } from "./TeamManager";
@@ -26,10 +26,6 @@ export class GameStateManager {
   private pauseEffectHandle?: number;
   private initialized = false;
   private readonly debugLogger: DebugLogger;
-  private playerTimerHandles: Map<string, number> = new Map();
-  private cachedDisplayText: string = "";
-  private playerJoinHandler?: (_arg: any) => void;
-  private playerLeaveHandler?: (_arg: any) => void;
 
   constructor(
     private readonly propertyStore: PropertyStore,
@@ -88,16 +84,12 @@ export class GameStateManager {
     this.startRoundTimer();
     this.initiateHUDState();
     this.challengeManager.monitorCompletion(challenges);
-    this.teamManager.registerJoinHandlers();
-    this.registerPlayerTimerHandlers();
+    this.teamManager.registerPlayerHandlers();
 
     // Initialize and show scoreboard
     this.scoreboardManager.initializeScoreboard();
     this.scoreboardManager.showScoreboard();
     this.scoreboardManager.updateScores(0, 0);
-
-    // Start timers for all current players
-    world.getAllPlayers().forEach((p) => this.startPlayerTimer(p));
 
     this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
   }
@@ -111,10 +103,8 @@ export class GameStateManager {
     this.pausedAtTick = 0;
     this.clearPauseEffects();
     this.stopRoundTimer();
-    this.stopAllPlayerTimers();
-    this.unregisterPlayerTimerHandlers();
     this.challengeManager.stopMonitoring();
-    this.teamManager.unregisterJoinHandlers();
+    this.teamManager.unregisterPlayerHandlers();
 
     // Hide scoreboard on game end
     this.scoreboardManager.hideScoreboard();
@@ -213,14 +203,10 @@ export class GameStateManager {
     const challenges = this.challengeManager.selectChallenges();
     this.challengeManager.monitorCompletion(challenges);
 
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
     world.sendMessage(roundMessage);
     this.audioManager?.playStartHorn(players);
-
-    // Immediately update the cached display text for the new round
-    const remaining = this.getRemainingTime();
-    this.updateTimerDisplay(remaining);
   }
 
   forceRound(roundNumber: number): void {
@@ -311,8 +297,16 @@ export class GameStateManager {
     if (this.roundTimerHandle !== undefined && typeof system.clearRun === "function") {
       system.clearRun(this.roundTimerHandle);
     }
-    // Check once per second (20 ticks) to minimize overhead.
-    this.roundTimerHandle = system.runInterval(() => this.handleRoundTick(), 20);
+    // Synchronize to 20-tick boundaries for consistent timing
+    const currentTick = system.currentTick;
+    const ticksSinceRoundStart = currentTick - this.roundStartTick;
+    const tickOffset = ticksSinceRoundStart % 20;
+    const delay = tickOffset === 0 ? 0 : 20 - tickOffset;
+
+    system.runTimeout(() => {
+      // Check once per second (20 ticks) to minimize overhead.
+      this.roundTimerHandle = system.runInterval(() => this.handleRoundTick(), 20);
+    }, delay);
   }
 
   private stopRoundTimer(): void {
@@ -324,10 +318,52 @@ export class GameStateManager {
   }
 
   private handleRoundTick(): void {
-    if (!this.isGameActive() || this.gamePaused) return;
+    if (!this.isGameActive()) return;
+
     const remaining = this.getRemainingTime();
-    this.updateTimerDisplay(remaining);
-    if (remaining === 0) {
+    const remainingSeconds = Math.floor(Math.max(remaining, 0) / 20);
+
+    // Format time as MM:SS
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+    // Color based on remaining time
+    const color = remainingSeconds <= 10 ? "§c" : remainingSeconds <= 30 ? "§6" : "§e";
+
+    // Cache the display text
+    const roundTimerText = `§fRound §e${this.currentRound}§f/§e${this.totalRounds} §7~ ${color}${timeStr}`;
+
+    // Cache players list for reuse
+    const players = this.teamManager.getAllPlayers();
+
+    // Audio warnings
+    if (remainingSeconds <= 10 && remainingSeconds > 0 && this.lastSecondWarning !== remainingSeconds) {
+      this.audioManager?.playTimerWarning10(players);
+      this.lastSecondWarning = remainingSeconds;
+    }
+
+    if (!this.warned30 && remainingSeconds <= 30) {
+      this.audioManager?.playTimerWarning30(players);
+      this.warned30 = true;
+    }
+
+    if (!this.warned60 && remainingSeconds <= 60) {
+      this.audioManager?.playTimerWarning60(players);
+      this.warned60 = true;
+    }
+
+    // Update all players' action bars
+    const displayText = this.gamePaused ? "§c§lGAME PAUSED" : roundTimerText;
+    players.forEach((player) => {
+      try {
+        player.onScreenDisplay.setActionBar(displayText);
+      } catch (err) {
+        this.debugLogger?.warn("Failed to update player action bar", player.name, err);
+      }
+    });
+
+    if (!this.gamePaused && remaining === 0) {
       this.transitionToNextRound();
     }
   }
@@ -338,129 +374,13 @@ export class GameStateManager {
     this.lastSecondWarning = undefined;
   }
 
-  private updateTimerDisplay(remainingTicks: number): void {
-    const remainingSeconds = Math.ceil(Math.max(remainingTicks, 0) / 20);
-
-    // Format time as MM:SS
-    const minutes = Math.floor(remainingSeconds / 60);
-    const seconds = remainingSeconds % 60;
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-    // Color based on remaining time
-    const color = remainingSeconds <= 10 ? "§c" : remainingSeconds <= 30 ? "§6" : "§e";
-
-    // Cache the display text (calculated once per tick)
-    this.cachedDisplayText = `§fRound §e${this.currentRound}§f/§e${this.totalRounds} §7~ ${color}${timeStr}`;
-
-    // Audio warnings
-    const players = world.getAllPlayers();
-    if (remainingSeconds <= 10 && this.lastSecondWarning !== remainingSeconds) {
-      this.audioManager?.playTimerWarning10(players);
-      this.lastSecondWarning = remainingSeconds;
-    }
-
-    if (!this.warned30 && remainingSeconds === 30) {
-      this.audioManager?.playTimerWarning30(players);
-      this.warned30 = true;
-    }
-
-    if (!this.warned60 && remainingSeconds === 60) {
-      this.audioManager?.playTimerWarning60(players);
-      this.warned60 = true;
-    }
-  }
-
-  private startPlayerTimer(player: Player): void {
-    const playerId = player.id;
-    if (this.playerTimerHandles.has(playerId)) return;
-
-    // Calculate delay to sync with the next 20-tick boundary
-    const currentTick = system.currentTick;
-    const tickOffset = currentTick % 20;
-    const delay = tickOffset === 0 ? 0 : 20 - tickOffset;
-
-    // Start after delay to synchronize with main timer
-    system.runTimeout(() => {
-      // Double-check player is still valid and game is still active
-      if (!this.isGameActive() || this.playerTimerHandles.has(playerId)) return;
-
-      const handle = system.runInterval(() => {
-        try {
-          if (!player || !this.isGameActive()) return;
-
-          const displayText = this.gamePaused ? "§c§lGAME PAUSED" : this.cachedDisplayText;
-
-          player.onScreenDisplay.setActionBar(displayText);
-        } catch (err) {
-          this.debugLogger?.warn("Failed to update player timer", player.name, err);
-        }
-      }, 20);
-
-      this.playerTimerHandles.set(playerId, handle);
-      this.debugLogger?.debug(`Started synchronized timer for player ${player.name} (delay: ${delay} ticks)`);
-    }, delay);
-  }
-
-  private stopPlayerTimer(playerId: string): void {
-    system.run(() => {
-      const handle = this.playerTimerHandles.get(playerId);
-      if (handle !== undefined) {
-        system.clearRun(handle);
-        this.playerTimerHandles.delete(playerId);
-        this.debugLogger?.debug(`Stopped timer for player ${playerId}`);
-      }
-    });
-  }
-
-  private stopAllPlayerTimers(): void {
-    system.run(() => {
-      this.playerTimerHandles.forEach((handle) => {
-        system.clearRun(handle);
-      });
-      this.playerTimerHandles.clear();
-      this.debugLogger?.log("Stopped all player timers");
-    });
-  }
-
-  private registerPlayerTimerHandlers(): void {
-    system.run(() => {
-      this.playerJoinHandler = world.afterEvents.playerSpawn.subscribe((event: PlayerSpawnAfterEvent) => {
-        if (this.isGameActive() && !this.gamePaused) {
-          system.run(() => {
-            this.startPlayerTimer(event.player);
-          });
-        }
-      });
-
-      this.playerLeaveHandler = world.afterEvents.playerLeave.subscribe((event: PlayerLeaveAfterEvent) => {
-        this.stopPlayerTimer(event.playerId);
-      });
-
-      this.debugLogger?.log("Registered player timer handlers");
-    });
-  }
-
-  private unregisterPlayerTimerHandlers(): void {
-    system.run(() => {
-      if (this.playerJoinHandler) {
-        world.afterEvents.playerSpawn.unsubscribe(this.playerJoinHandler);
-        this.playerJoinHandler = undefined;
-      }
-      if (this.playerLeaveHandler) {
-        world.afterEvents.playerLeave.unsubscribe(this.playerLeaveHandler);
-        this.playerLeaveHandler = undefined;
-      }
-      this.debugLogger?.log("Unregistered player timer handlers");
-    });
-  }
-
   private applyPauseEffects(): void {
     if (this.pauseEffectHandle !== undefined && typeof system.clearRun === "function") {
       system.clearRun(this.pauseEffectHandle);
     }
 
     this.pauseEffectHandle = system.runInterval(() => {
-      const players = world.getAllPlayers();
+      const players = this.teamManager.getAllPlayers();
       players.forEach((p) => {
         try {
           p.addEffect("slowness", 40, { amplifier: 255, showParticles: false });
@@ -478,7 +398,7 @@ export class GameStateManager {
     }
     this.pauseEffectHandle = undefined;
 
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     players.forEach((p) => {
       try {
         system.run(() => {
@@ -497,7 +417,7 @@ export class GameStateManager {
     } else {
       world.sendMessage("§a[GAME RESUMED]");
     }
-    // Player timers will automatically pick up the paused state
+    // The unified timer will automatically pick up the paused state
   }
 
   private announceWinner(): void {
@@ -514,7 +434,7 @@ export class GameStateManager {
       winnerLabel = "Azure";
     }
 
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
 
     // Step 1: Wait 3 seconds, then show "GAME OVER!" for 5 seconds
     system.runTimeout(() => {
@@ -578,9 +498,5 @@ export class GameStateManager {
   private initiateHUDState(): void {
     const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
     world.sendMessage(roundMessage);
-
-    // Show initial timer display
-    const remaining = this.getRemainingTime();
-    this.updateTimerDisplay(remaining);
   }
 }

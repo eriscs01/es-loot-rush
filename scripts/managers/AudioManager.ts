@@ -27,10 +27,8 @@ export class AudioManager {
     players.forEach((player) => this.playSound(player, "random.click"));
   }
 
-  playChallengeComplete(winners: Player[], others: Player[]): void {
+  playChallengeComplete(winners: Player[]): void {
     winners.forEach((player) => this.playSound(player, "random.levelup"));
-    // Explicitly silent for opposing team
-    void others;
   }
 
   playTimerWarning60(players: Player[]): void {

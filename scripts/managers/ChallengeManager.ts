@@ -171,13 +171,8 @@ export class ChallengeManager {
     const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
     world.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challengeLabel}" (+${challenge.points} pts)`);
 
-    const players = world.getAllPlayers();
-    const winners = players.filter((p) => this.teamManager.getPlayerTeam(p) === team);
-    const others = players.filter((p) => {
-      const t = this.teamManager.getPlayerTeam(p);
-      return t && t !== team;
-    });
-    this.audioManager?.playChallengeComplete(winners, others);
+    const winners = this.teamManager.getTeamPlayers(team);
+    this.audioManager?.playChallengeComplete(winners);
 
     if (chestLocation) {
       try {
@@ -189,7 +184,6 @@ export class ChallengeManager {
       this.chestManager.removeChallengeItems(container, challenge);
     }
 
-    const newScore = this.teamManager.getTeamScore(team);
     const crimson = this.teamManager.getTeamScore("crimson");
     const azure = this.teamManager.getTeamScore("azure");
     this.scoreboardManager.updateScores(crimson, azure);
