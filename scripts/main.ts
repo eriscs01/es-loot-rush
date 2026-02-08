@@ -8,6 +8,7 @@ import { CommandHandler } from "./managers/CommandHandler";
 import { ConfigManager } from "./managers/ConfigManager";
 import { AudioManager } from "./managers/AudioManager";
 import { ScoreboardManager } from "./managers/ScoreboardManager";
+import { BookManager } from "./managers/BookManager";
 
 const propertyStore = new PropertyStore();
 propertyStore.initialize();
@@ -28,6 +29,9 @@ const challengeManager = new ChallengeManager(
   chestManager
 );
 
+const bookManager = new BookManager(propertyStore, challengeManager);
+bookManager.registerBookHandler();
+
 const gameStateManager = new GameStateManager(
   propertyStore,
   configManager,
@@ -36,7 +40,8 @@ const gameStateManager = new GameStateManager(
   chestManager,
   hudManager,
   audioManager,
-  scoreboardManager
+  scoreboardManager,
+  bookManager
 );
 gameStateManager.initialize();
 
@@ -49,6 +54,7 @@ const commandHandler = new CommandHandler(
   hudManager,
   configManager,
   audioManager,
-  scoreboardManager
+  scoreboardManager,
+  bookManager
 );
 commandHandler.registerCommands();

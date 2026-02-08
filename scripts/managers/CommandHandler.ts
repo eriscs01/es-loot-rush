@@ -17,6 +17,7 @@ import { HUDManager } from "./HUDManager";
 import { ConfigManager } from "./ConfigManager";
 import { AudioManager } from "./AudioManager";
 import { ScoreboardManager } from "./ScoreboardManager";
+import { BookManager } from "./BookManager";
 import { TeamId } from "../types";
 import { DebugLogger } from "./DebugLogger";
 import { PropertyStore } from "./PropertyStore";
@@ -33,7 +34,8 @@ export class CommandHandler {
     private readonly hudManager: HUDManager,
     private readonly configManager: ConfigManager,
     private readonly audioManager: AudioManager,
-    private readonly scoreboardManager: ScoreboardManager
+    private readonly scoreboardManager: ScoreboardManager,
+    private readonly bookManager: BookManager
   ) {
     void gameStateManager;
     void teamManager;
@@ -43,6 +45,7 @@ export class CommandHandler {
     void configManager;
     void audioManager;
     void scoreboardManager;
+    void bookManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -186,6 +189,16 @@ export class CommandHandler {
         },
         this.handleConfigReset.bind(this)
       );
+
+      customCommandRegistry.registerCommand(
+        {
+          name: "lr:givebook",
+          description: "Give challenges book to all players",
+          permissionLevel: CommandPermissionLevel.GameDirectors,
+          cheatsRequired: false,
+        },
+        this.handleGiveBook.bind(this)
+      );
     });
   }
 
@@ -232,6 +245,10 @@ export class CommandHandler {
 
     const active = this.challengeManager.selectChallenges();
     this.gameStateManager.startGame(active);
+
+    // Give challenges book to all players
+    this.bookManager.giveBookToAllPlayers();
+
     const players = world.getAllPlayers();
     const durationInMins = this.configManager.getConfigValue("roundDurationTicks") / 20 / 60;
     world.sendMessage(`§6[LOOT RUSH] §fGame started!`);
@@ -493,5 +510,14 @@ export class CommandHandler {
     this.configManager.saveConfig();
     void origin;
     return { status: CustomCommandStatus.Success, message: "§aConfiguration reset to defaults." };
+  }
+
+  handleGiveBook(origin: CustomCommandOrigin): CustomCommandResult {
+    if (!this.bookManager) {
+      return { status: CustomCommandStatus.Failure, message: "§cBook manager not available." };
+    }
+    this.bookManager.giveBookToAllPlayers();
+    void origin;
+    return { status: CustomCommandStatus.Success, message: "§aGave challenges book to all players." };
   }
 }

@@ -4,17 +4,6 @@
     "ui/hud/round_indicator.json",
     "ui/hud/timer_indicator.json",
     "ui/hud/score_azure_indicator.json",
-    "ui/hud/score_crimson_indicator.json",
-    "ui/hud/chheader_indicator.json",
-    "ui/hud/chlist0_indicator.json",
-    "ui/hud/chlist1_indicator.json",
-    "ui/hud/chlist2_indicator.json",
-    "ui/hud/chlist3_indicator.json",
-    "ui/hud/chlist4_indicator.json",
-    "ui/hud/chlist5_indicator.json",
-    "ui/hud/chlist6_indicator.json",
-    "ui/hud/chlist7_indicator.json",
-    "ui/hud/chlist8_indicator.json",
-    "ui/hud/chlist9_indicator.json"
+    "ui/hud/score_crimson_indicator.json"
   ]
 }

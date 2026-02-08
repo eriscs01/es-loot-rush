@@ -8,6 +8,7 @@ import { ChestManager } from "./ChestManager";
 import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { ScoreboardManager } from "./ScoreboardManager";
+import { BookManager } from "./BookManager";
 import { DebugLogger } from "./DebugLogger";
 import { DYNAMIC_KEYS } from "../config/constants";
 
@@ -32,8 +33,9 @@ export class GameStateManager {
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager: AudioManager | undefined,
-    private readonly scoreboardManager: ScoreboardManager
+    private readonly audioManager?: AudioManager,
+    private readonly scoreboardManager: ScoreboardManager,
+    private readonly bookManager?: BookManager
   ) {
     void configManager;
     void teamManager;
@@ -42,6 +44,7 @@ export class GameStateManager {
     void hudManager;
     void audioManager;
     void scoreboardManager;
+    void bookManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -106,6 +109,7 @@ export class GameStateManager {
     // Hide scoreboard on game end
     this.scoreboardManager.hideScoreboard();
 
+    this.bookManager?.removeBooksFromAllPlayers();
     this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
       this.announceWinner();
@@ -130,6 +134,7 @@ export class GameStateManager {
     this.challengeManager.resetChallenges();
     this.teamManager.clearTeams();
     this.chestManager.clearChestReferences();
+    this.bookManager?.removeBooksFromAllPlayers();
 
     // Reset scoreboard
     this.scoreboardManager.resetScoreboard();
@@ -206,7 +211,6 @@ export class GameStateManager {
     players.forEach((p) => {
       this.hudManager.updateRoundInfo(p);
       this.hudManager.updateTimer(p);
-      this.hudManager.updateChallenges(p, challenges);
     });
     this.audioManager?.playStartHorn(players);
   }
@@ -456,12 +460,10 @@ export class GameStateManager {
   private initiateHUDState(): void {
     system.run(() => {
       const players = world.getAllPlayers();
-      const challenges = this.challengeManager.getActiveChallenges();
       players.forEach((p) => {
         this.hudManager.updateRoundInfo(p);
         this.hudManager.updateTimer(p);
         this.hudManager.updateScores(p);
-        this.hudManager.updateChallenges(p, challenges);
       });
     });
   }
