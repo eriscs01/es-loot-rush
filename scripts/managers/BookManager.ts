@@ -5,10 +5,12 @@ import { PropertyStore } from "./PropertyStore";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
 import { ChallengeRecord } from "../types";
+import { MinecraftItemTypes } from "@minecraft/vanilla-data";
 
 export class BookManager {
   private readonly debugLogger: DebugLogger;
-  private readonly bookItemId = "minecraft:writable_book";
+  private readonly bookItemId = MinecraftItemTypes.Paper;
+  private readonly bookItemTag = "§6Challenge Codex";
   private bookUseHandler?: (_event: ItemUseBeforeEvent) => void;
 
   constructor(
@@ -21,7 +23,7 @@ export class BookManager {
   }
 
   /**
-   * Removes the challenges book from all players
+   * Removes the challenge codex from all players
    */
   removeBooksFromAllPlayers(): void {
     const players = world.getAllPlayers();
@@ -37,12 +39,12 @@ export class BookManager {
       }
     });
 
-    this.debugLogger?.log(`Removed challenges book from ${removedCount}/${players.length} players`);
+    this.debugLogger?.log(`Removed challenge codex from ${removedCount}/${players.length} players`);
   }
 
   /**
-   * Removes the challenges book from a specific player
-   * @returns true if book was found and removed, false otherwise
+   * Removes the challenge codex from a specific player
+   * @returns true if codex was found and removed, false otherwise
    */
   removeBookFromPlayer(player: Player): boolean {
     try {
@@ -54,9 +56,9 @@ export class BookManager {
       const container = inventory.container;
       for (let i = 0; i < container.size; i++) {
         const item = container.getItem(i);
-        if (item?.typeId === this.bookItemId && item.nameTag === "§6Challenges Book") {
+        if (item?.typeId === this.bookItemId && item.nameTag === this.bookItemTag) {
           // Remove the book
-          container.setItem(i, undefined);
+          system.run(() => container.setItem(i, undefined));
           return true;
         }
       }
@@ -68,7 +70,7 @@ export class BookManager {
   }
 
   /**
-   * Gives the challenges book to all players
+   * Gives the challenge codex to all players
    */
   giveBookToAllPlayers(): void {
     const players = world.getAllPlayers();
@@ -77,19 +79,21 @@ export class BookManager {
 
     players.forEach((player) => {
       try {
-        this.giveBookToPlayer(player);
+        system.run(() => this.giveBookToPlayer(player));
         successCount++;
       } catch (err) {
         failCount++;
         this.debugLogger?.warn("Failed to give book to player", player.nameTag, err);
       }
     });
+    this.unregisterBookHandler();
+    this.registerBookHandler();
 
-    this.debugLogger?.log(`Gave challenges book to ${successCount}/${players.length} players (${failCount} failed)`);
+    this.debugLogger?.log(`Gave challenge codex to ${successCount}/${players.length} players (${failCount} failed)`);
   }
 
   /**
-   * Gives the challenges book to a specific player
+   * Gives the challenge codex to a specific player
    */
   giveBookToPlayer(player: Player): void {
     try {
@@ -103,7 +107,7 @@ export class BookManager {
       const container = inventory.container;
       for (let i = 0; i < container.size; i++) {
         const item = container.getItem(i);
-        if (item?.typeId === this.bookItemId && item.nameTag === "§6Challenges Book") {
+        if (item?.typeId === this.bookItemId && item.nameTag === this.bookItemTag) {
           // Player already has the book
           return;
         }
@@ -111,12 +115,12 @@ export class BookManager {
 
       // Create the book item
       const book = new ItemStack(this.bookItemId, 1);
-      book.nameTag = "§6Challenges Book";
+      book.nameTag = this.bookItemTag;
       book.setLore(["§7Right-click to view challenges"]);
 
       // Give the book to the player
       container.addItem(book);
-      player.sendMessage("§6[LOOT RUSH] §fYou received a Challenges Book! Use it to view challenges.");
+      player.sendMessage("§6[LOOT RUSH] §fYou received a Challenge Codex! Use it to view challenges.");
     } catch (err) {
       this.debugLogger?.warn("Failed to give book to player", player.nameTag, err);
     }
@@ -126,29 +130,28 @@ export class BookManager {
    * Registers the event handler for book usage
    */
   registerBookHandler(): void {
-    if (this.bookUseHandler) {
-      // Already registered
-      return;
-    }
-
-    this.bookUseHandler = (event: ItemUseBeforeEvent) => {
-      const player = event.source as Player;
-      const item = event.itemStack;
-
-      // Check if the item is our challenges book
-      if (item?.typeId === this.bookItemId && item.nameTag === "§6Challenges Book") {
-        // Cancel the default book opening behavior
-        event.cancel = true;
-
-        // Show the challenges form
-        system.run(() => {
-          this.showChallengesForm(player);
-        });
+    system.run(() => {
+      if (this.bookUseHandler) {
+        // Already registered
+        return;
       }
-    };
 
-    world.beforeEvents.itemUse.subscribe(this.bookUseHandler);
-    this.debugLogger?.log("Registered book interaction handler");
+      this.bookUseHandler = (event: ItemUseBeforeEvent) => {
+        system.run(async () => {
+          const player = event.source as Player;
+          const item = event.itemStack;
+
+          // Check if the item is our challenge codex
+          if (item?.typeId === this.bookItemId && item.nameTag === this.bookItemTag) {
+            // Show the challenges form
+            await this.showChallengesForm(player);
+          }
+        });
+      };
+
+      world.beforeEvents.itemUse.subscribe(this.bookUseHandler);
+      this.debugLogger?.log("Registered book interaction handler");
+    });
   }
 
   /**
@@ -157,6 +160,9 @@ export class BookManager {
    * The handler will remain registered but will be inactive when bookUseHandler is undefined.
    */
   unregisterBookHandler(): void {
+    if (this.bookUseHandler) {
+      world.beforeEvents.itemUse.unsubscribe(this.bookUseHandler);
+    }
     this.bookUseHandler = undefined;
     this.debugLogger?.log("Unregistered book interaction handler");
   }
@@ -189,13 +195,13 @@ export class BookManager {
       }
 
       const form = new ActionFormData();
-      form.title("§6Loot Rush Challenges");
-      form.body("§7Current challenges for this round:\n");
+      form.title("Challenge Codex");
+      form.body("Current challenges for this round:");
 
       // Add buttons for each challenge
       activeChallenges.forEach((challenge) => {
         const buttonText = this.formatChallengeButton(challenge);
-        form.button(buttonText);
+        form.button(buttonText, `textures/items/${challenge.items[0].replace("minecraft:", "")}`);
       });
 
       // Show the form
@@ -216,30 +222,22 @@ export class BookManager {
    * Formats a challenge for display in the form button
    */
   private formatChallengeButton(challenge: ChallengeRecord): string {
-    let prefix: string;
     let suffix = "";
 
     if (challenge.state === "completed" && challenge.completedBy) {
       // Show which team completed it
       const teamName = challenge.completedBy === "crimson" ? "§cCrimson" : "§bAzure";
-      prefix = "§a✓";
-      suffix = ` §8(Claimed by ${teamName}§8)`;
-    } else if (challenge.state === "locked") {
-      // Locked state
-      prefix = "§e⏳";
-      suffix = " §8(In Progress)";
+      suffix = `§r(${teamName}§r)`;
     } else {
       // Available
-      prefix = "§f○";
-      suffix = " §8(Open)";
+      suffix = "(Open)";
     }
 
-    const points = `§e${challenge.points}pts`;
+    const points = `${challenge.points}pts`;
     // ChallengeRecord has both 'name' (formatted item name) and 'title' (challenge category)
     // Use 'name' for display as it's the full formatted item description
     const itemName = challenge.name;
-    const count = challenge.count > 1 ? `${challenge.count}x ` : "";
 
-    return `${prefix} ${count}${itemName} §7- ${points}${suffix}`;
+    return `${itemName} - ${points} ${suffix}`;
   }
 }

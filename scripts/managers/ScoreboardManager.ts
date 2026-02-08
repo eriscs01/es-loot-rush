@@ -1,4 +1,4 @@
-import { world, DisplaySlotId } from "@minecraft/server";
+import { world, DisplaySlotId, system } from "@minecraft/server";
 import { PropertyStore } from "./PropertyStore";
 import { TeamId } from "../types";
 import { DebugLogger } from "./DebugLogger";
@@ -16,23 +16,21 @@ export class ScoreboardManager {
    */
   initializeScoreboard(): void {
     try {
-      // Remove existing scoreboard if it exists
-      const existing = world.scoreboard.getObjective(this.objectiveName);
-      if (existing) {
-        world.scoreboard.removeObjective(existing);
-      }
-
-      // Create new scoreboard objective
-      const objective = world.scoreboard.addObjective(this.objectiveName, "§6§lLOOT RUSH");
-
-      // Set display slot to sidebar
-      objective.setScore("§cCrimson Crusaders", 0);
-      objective.setScore("§bAzure Architects", 0);
-
-      world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
-        objective: objective,
+      system.run(() => {
+        // Remove existing scoreboard if it exists
+        const existing = world.scoreboard.getObjective(this.objectiveName);
+        if (existing) {
+          world.scoreboard.removeObjective(existing);
+        }
+        // Create new scoreboard objective
+        const objective = world.scoreboard.addObjective(this.objectiveName, "§6§lLOOT RUSH");
+        // Set display slot to sidebar
+        objective.setScore("§cCrimson Crusaders", 0);
+        objective.setScore("§bAzure Architects", 0);
+        world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
+          objective: objective,
+        });
       });
-
       this.debugLogger?.log("Scoreboard initialized successfully");
     } catch (err) {
       this.debugLogger?.warn("Failed to initialize scoreboard", err);
@@ -51,7 +49,7 @@ export class ScoreboardManager {
       }
 
       const displayName = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
-      objective.setScore(displayName, score);
+      system.run(() => objective.setScore(displayName, score));
       this.debugLogger?.log(`Updated ${team} score to ${score}`);
     } catch (err) {
       this.debugLogger?.warn(`Failed to update ${team} score`, err);
@@ -77,8 +75,10 @@ export class ScoreboardManager {
         return;
       }
 
-      world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
-        objective: objective,
+      system.run(() => {
+        world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
+          objective: objective,
+        });
       });
 
       this.debugLogger?.log("Scoreboard shown");
@@ -92,7 +92,7 @@ export class ScoreboardManager {
    */
   hideScoreboard(): void {
     try {
-      world.scoreboard.clearObjectiveAtDisplaySlot(DisplaySlotId.Sidebar);
+      system.run(() => world.scoreboard.clearObjectiveAtDisplaySlot(DisplaySlotId.Sidebar));
       this.debugLogger?.log("Scoreboard hidden");
     } catch (err) {
       this.debugLogger?.warn("Failed to hide scoreboard", err);
@@ -108,7 +108,7 @@ export class ScoreboardManager {
 
       const objective = world.scoreboard.getObjective(this.objectiveName);
       if (objective) {
-        world.scoreboard.removeObjective(objective);
+        system.run(() => world.scoreboard.removeObjective(objective));
       }
 
       this.debugLogger?.log("Scoreboard reset");
