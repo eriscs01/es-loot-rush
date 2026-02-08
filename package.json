@@ -10,6 +10,7 @@
     "@typescript-eslint/parser": "^8.53.1",
     "eslint-plugin-minecraft-linting": "^2.0.10",
     "source-map": "^0.7.4",
+    "ssh2-sftp-client": "^12.0.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.5.4"
   },
@@ -22,7 +23,8 @@
     "mcaddon:production": "just-scripts mcaddon --production",
     "enablemcloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-1958404141-86561845-1752920682-3514627264-368642714-62675701-733520436",
     "enablemcpreviewloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-424268864-5579737-879501358-346833251-474568803-887069379-4040235476",
-    "buildsnippets": "just-scripts buildSnippets"
+    "buildsnippets": "just-scripts buildSnippets",
+    "server-deploy": "just-scripts server-deploy"
   },
   "dependencies": {
     "@minecraft/math": "^2.2.11",

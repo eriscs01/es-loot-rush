@@ -16,6 +16,7 @@ import {
   watchTask,
 } from "@minecraft/core-build-tasks";
 import path from "path";
+import { spawn } from "child_process";
 setupEnvironment(path.resolve(__dirname, ".env"));
 const projectName = getOrThrowFromProcess("PROJECT_NAME");
 const isProduction = argv().production || false;
@@ -55,3 +56,26 @@ task(
 );
 task("createMcaddonFile", mcaddonTask(mcaddonTaskOptions));
 task("mcaddon", series("clean-local", "build", "createMcaddonFile"));
+task("sftp-upload", () => {
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn("node", [path.join(__dirname, "deploy-sftp.mjs")], {
+      stdio: "inherit",
+      shell: true,
+    });
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`SFTP upload failed with code ${code}`));
+      }
+    });
+    child.on("error", reject);
+  });
+});
+task(
+  "server-deploy",
+  watchTask(
+    ["scripts/**/*.ts", "behavior_packs/**/*.{json,lang,tga,ogg,png}", "resource_packs/**/*.{json,lang,tga,ogg,png}"],
+    series("clean-local", "build", "sftp-upload")
+  )
+);
