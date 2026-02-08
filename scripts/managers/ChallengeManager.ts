@@ -9,7 +9,6 @@ import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { ChestManager } from "./ChestManager";
-import { buildChallengeName } from "../utils/text";
 
 export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
@@ -72,7 +71,7 @@ export class ChallengeManager {
 
     const selections = Array.from(uniqueById.values());
 
-    this.activeChallenges = selections.map((c) => ({ ...c, state: "available", name: buildChallengeName(c) }));
+    this.activeChallenges = selections.map((c) => ({ ...c, state: "available" }));
     this.persistActive();
     this.completedChallenges = [];
     this.persistCompleted();
@@ -99,11 +98,12 @@ export class ChallengeManager {
     // Lock first to prevent concurrent completion attempts on the same challenge
     this.lockChallenge(challengeId);
 
-    this.activeChallenges = this.activeChallenges.map((c) => {
-      if (c.id !== challengeId) return c;
-      completed = { ...c, state: "completed", completedBy: team };
-      return completed;
-    });
+    const idx = this.activeChallenges.findIndex((c) => c.id === challengeId);
+    if (idx !== -1) {
+      this.activeChallenges[idx].completedBy = team;
+      this.activeChallenges[idx].state = "completed";
+      completed = this.activeChallenges[idx];
+    }
 
     if (completed) {
       this.persistActive();
@@ -216,7 +216,7 @@ export class ChallengeManager {
   }
 
   getActiveChallenges(): ChallengeRecord[] {
-    this.activeChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.activeChallenges, []);
+    // this.activeChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.activeChallenges, []);
     return [...this.activeChallenges];
   }
 

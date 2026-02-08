@@ -213,7 +213,7 @@ export class GameStateManager {
 
   forceRound(roundNumber: number): void {
     this.currentRound = roundNumber - 1;
-    this.transitionToNextRound();
+    system.run(() => this.transitionToNextRound());
   }
 
   isGameActive(): boolean {

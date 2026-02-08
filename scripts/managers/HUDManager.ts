@@ -50,7 +50,7 @@ export class HUDManager {
     // Header
     this.setTitle(player, "update:eslr:chheader:§6§lCHALLENGES");
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < challenges.length - 1; i++) {
       const challenge = challenges[i];
       if (!challenge) {
         this.setTitle(player, `update:eslr:chlist${i}:`);
