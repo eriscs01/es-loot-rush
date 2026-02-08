@@ -30,7 +30,6 @@ const challengeManager = new ChallengeManager(
 );
 
 const bookManager = new BookManager(propertyStore, challengeManager);
-bookManager.registerBookHandler();
 
 const gameStateManager = new GameStateManager(
   propertyStore,

@@ -33,9 +33,9 @@ export class GameStateManager {
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
     private readonly hudManager: HUDManager,
-    private readonly audioManager?: AudioManager,
+    private readonly audioManager: AudioManager,
     private readonly scoreboardManager: ScoreboardManager,
-    private readonly bookManager?: BookManager
+    private readonly bookManager: BookManager
   ) {
     void configManager;
     void teamManager;
