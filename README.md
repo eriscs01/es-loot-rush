@@ -23,6 +23,7 @@ products:
 ## ✨ Features
 
 ### Core Mechanics
+
 - **Dynamic Challenge System**: Challenges rotate each round with configurable difficulty distribution
 - **First-Come-First-Served**: Only the first team to complete a challenge gets the points
 - **Real-time HUD**: Custom on-screen display showing round info, timer, challenges, and scores
@@ -31,17 +32,19 @@ products:
 - **Round Transitions**: Automatic progression through configurable number of rounds
 
 ### Configurable Gameplay
+
 - **Challenge Distribution**: Customize easy/medium/hard challenge counts per round (max 10 total)
 - **Game Length**: Adjust total rounds and round duration
 - **Difficulty Scaling**: Balance gameplay from beginner-friendly to expert mode
 - **Flexible Settings**: All configurations adjustable before game start
 
 ### Visual & Audio Feedback
-- **HUD Elements**: 
+
+- **HUD Elements**:
   - Round counter and timer with color-coded warnings
   - Challenge status indicators (available, completed, team ownership)
   - Team scores with color coding (red/blue)
-- **Sound Effects**: 
+- **Sound Effects**:
   - Team shuffle animations with audio
   - Round transitions and timer warnings
   - Challenge completion notifications
@@ -54,7 +57,7 @@ products:
 ## 📋 Requirements
 
 - **Minecraft Bedrock**: Version 1.21.130 or higher
-- **Required Packs**: 
+- **Required Packs**:
   - Loot Rush Behavior Pack (BP)
   - Loot Rush Resource Pack (RP)
 - **Permissions**: Operator level 1+ for admin commands
@@ -64,17 +67,14 @@ products:
 
 1. **Download the Addon**:
    - Download both the behavior pack and resource pack files
-   
 2. **Install Packs**:
    - Copy behavior pack to: `<minecraft>/development_behavior_packs/`
    - Copy resource pack to: `<minecraft>/development_resource_packs/`
-   
 3. **Create World**:
    - Create a new world in Minecraft
    - Under "Behavior Packs", activate "Loot Rush - Behavior Pack"
    - Under "Resource Packs", activate "Loot Rush - Resource Pack"
    - Enable "Cheats" and "Education Edition" (if needed)
-   
 4. **World Settings**:
    - Recommended: Creative or Survival mode
    - Set world spawn point where you want the game area
@@ -85,34 +85,41 @@ products:
 ### For Admins (Game Setup)
 
 1. **Optional: Configure Game Settings** (before starting):
+
    ```
-   lr:config                              # View current settings
-   lr:config:set easyChallengeCount 5     # Set easy challenges per round
-   lr:config:set mediumChallengeCount 3   # Set medium challenges per round
-   lr:config:set hardChallengeCount 2     # Set hard challenges per round
-   lr:config:set totalRounds 4            # Set number of rounds
-   lr:config:set roundDurationTicks 18000 # Set round duration (15 min)
+   lr:config                                # View current settings
+   lr:configset easyChallengeCount 5        # Set easy challenges per round
+   lr:configset mediumChallengeCount 3      # Set medium challenges per round
+   lr:configset hardChallengeCount 2        # Set hard challenges per round
+   lr:configset totalRounds 4               # Set number of rounds
+   lr:configset roundDurationTicks 18000    # Set round duration (15 min)
    ```
+
    **Note**: Total challenges (easy + medium + hard) should not exceed 10 for optimal HUD display.
 
 2. **Form Teams**:
+
    ```
    lr:teamup
    ```
+
    - All online players randomly split into two teams
    - Team reveal animation plays (10 seconds shuffling, 4.5 seconds reveal)
    - Bounty chests placed at spawn (-3 and +3 blocks from center)
    - Player name tags colored (red/blue)
 
 3. **Start the Game**:
+
    ```
    lr:start
    ```
+
    - Round 1 begins with random challenges
    - Timer starts counting down
    - HUD activates for all players
 
 4. **Manage Game** (optional commands):
+
    ```
    lr:pause                    # Pause the timer
    lr:resume                   # Resume the timer
@@ -139,7 +146,7 @@ products:
 
 3. **Gather Resources**: Explore, mine, fight mobs, and collect required items
 
-4. **Deposit Items**: 
+4. **Deposit Items**:
    - Return to spawn and locate your team's bounty chest
    - **Crimson Bounty** (red, west side, -3 blocks from center)
    - **Azure Bounty** (blue, east side, +3 blocks from center)
@@ -160,20 +167,27 @@ products:
 ## 🎲 Challenge Types
 
 ### Easy Challenges (10-20 points)
+
 Common blocks and basic resources:
-- 64 Cobblestone, 32 Logs, 16 Bread, 16 Coal, 12 Wool, etc.
+
+- 32 Cobblestone, 16 Logs, 8 Bread, 8 Coal, 8 Wool, etc.
 
 ### Medium Challenges (25-45 points)
+
 Mob drops and processed materials:
-- 8 Gunpowder, 5 Ender Pearls, 4 Iron Blocks, Diamond Pickaxe, etc.
+
+- 4 Gunpowder, 3 Ender Pearls, 2 Iron Blocks, Diamond Pickaxe, etc.
 
 ### Hard Challenges (50-75 points)
+
 Rare items and special loot:
+
 - Enchanted Book, Golden Apple, 8 Emeralds, Totem of Undying, Trident, etc.
 
-**Default Configuration**: 3 Easy + 2 Medium + 1 Hard = 6 challenges per round (~145-215 points available)
+**Default Configuration**: 6 Easy + 3 Medium + 1 Hard = 10 challenges per round (~200-350 points available)
 
 **How Points Work**:
+
 - Only the **first team** to complete a challenge earns the points
 - Completed challenges lock for both teams
 - Points accumulate across all rounds
@@ -185,48 +199,53 @@ Rare items and special loot:
 
 Configure before running `lr:start`:
 
-| Setting | Command | Default | Range | Description |
-|---------|---------|---------|-------|-------------|
-| Easy Challenges | `lr:config:set easyChallengeCount <n>` | 3 | 0-10 | Easy challenges per round |
-| Medium Challenges | `lr:config:set mediumChallengeCount <n>` | 2 | 0-10 | Medium challenges per round |
-| Hard Challenges | `lr:config:set hardChallengeCount <n>` | 1 | 0-10 | Hard challenges per round |
-| Total Rounds | `lr:config:set totalRounds <n>` | 4 | 1-10 | Number of rounds in game |
-| Round Duration | `lr:config:set roundDurationTicks <n>` | 18000 | - | Ticks per round (18000 = 15 min) |
+| Setting           | Command                                 | Default | Range      | Description                      |
+| ----------------- | --------------------------------------- | ------- | ---------- | -------------------------------- |
+| Easy Challenges   | `lr:configset easyChallengeCount <n>`   | 6       | 0-10       | Easy challenges per round        |
+| Medium Challenges | `lr:configset mediumChallengeCount <n>` | 3       | 0-10       | Medium challenges per round      |
+| Hard Challenges   | `lr:configset hardChallengeCount <n>`   | 1       | 0-10       | Hard challenges per round        |
+| Total Rounds      | `lr:configset totalRounds <n>`          | 4       | 1-10       | Number of rounds in game         |
+| Round Duration    | `lr:configset roundDurationTicks <n>`   | 18000   | 1200-72000 | Ticks per round (18000 = 15 min) |
 
 ### Recommended Configurations
 
 **Beginner Friendly** (easier, more challenges):
+
 ```
-lr:config:set easyChallengeCount 8
-lr:config:set mediumChallengeCount 2
-lr:config:set hardChallengeCount 0
+lr:configset easyChallengeCount 8
+lr:configset mediumChallengeCount 2
+lr:configset hardChallengeCount 0
 ```
 
 **Balanced** (default-style gameplay):
+
 ```
-lr:config:set easyChallengeCount 5
-lr:config:set mediumChallengeCount 3
-lr:config:set hardChallengeCount 2
+lr:configset easyChallengeCount 5
+lr:configset mediumChallengeCount 3
+lr:configset hardChallengeCount 2
 ```
 
 **Expert Mode** (harder challenges):
+
 ```
-lr:config:set easyChallengeCount 3
-lr:config:set mediumChallengeCount 3
-lr:config:set hardChallengeCount 4
+lr:configset easyChallengeCount 3
+lr:configset mediumChallengeCount 3
+lr:configset hardChallengeCount 4
 ```
 
 **Speed Round** (short game):
+
 ```
-lr:config:set totalRounds 2
-lr:config:set roundDurationTicks 12000
-lr:config:set easyChallengeCount 4
-lr:config:set mediumChallengeCount 1
+lr:configset totalRounds 2
+lr:configset roundDurationTicks 12000
+lr:configset easyChallengeCount 4
+lr:configset mediumChallengeCount 1
 ```
 
 ### Reset Configuration
+
 ```
-lr:config:reset   # Reset all settings to defaults
+lr:configreset   # Reset all settings to defaults
 ```
 
 ## 🕹️ Admin Commands
@@ -234,42 +253,46 @@ lr:config:reset   # Reset all settings to defaults
 All commands require **GameDirectors** permission (Operator level 1+):
 
 ### Game Control
-| Command | Description |
-|---------|-------------|
+
+| Command     | Description                                          |
+| ----------- | ---------------------------------------------------- |
 | `lr:teamup` | Form teams with reveal animation and chest placement |
-| `lr:start` | Start the challenge timer and first round |
-| `lr:end` | End the current game (keeps teams intact) |
-| `lr:reset` | Complete reset (clears teams and all game state) |
+| `lr:start`  | Start the challenge timer and first round            |
+| `lr:end`    | End the current game (keeps teams intact)            |
+| `lr:reset`  | Complete reset (clears teams and all game state)     |
 
 ### Configuration (Before Start)
-| Command | Description |
-|---------|-------------|
-| `lr:config` | View current configuration settings |
-| `lr:config:set <key> <value>` | Set a configuration value |
-| `lr:config:reset` | Reset all settings to defaults |
+
+| Command                      | Description                         |
+| ---------------------------- | ----------------------------------- |
+| `lr:config`                  | View current configuration settings |
+| `lr:configset <key> <value>` | Set a configuration value           |
+| `lr:configreset`             | Reset all settings to defaults      |
 
 **Valid keys**: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`
 
 ### Game Management
-| Command | Description |
-|---------|-------------|
-| `lr:pause` | Pause the game timer |
-| `lr:resume` | Resume the game timer |
-| `lr:forceround <1-N>` | Jump to a specific round number |
-| `lr:setscore crimson\|azure <points>` | Manually adjust team score |
 
-### Debug
-| Command | Description |
-|---------|-------------|
-| `lr:debug true\|false` | Toggle debug logging |
-| `lr:backup` | Create backup of current game state |
-| `lr:restore` | Restore from backup |
+| Command                               | Description                     |
+| ------------------------------------- | ------------------------------- |
+| `lr:pause`                            | Pause the game timer            |
+| `lr:resume`                           | Resume the game timer           |
+| `lr:forceround <1-N>`                 | Jump to a specific round number |
+| `lr:setscore crimson\|azure <points>` | Manually adjust team score      |
+
+### Debug & Utilities
+
+| Command                | Description                         |
+| ---------------------- | ----------------------------------- |
+| `lr:debug true\|false` | Toggle debug logging                |
+| `lr:givebook`          | Give challenges book to all players |
 
 ## 🔧 Development
 
 This addon is built with TypeScript and uses the Minecraft Bedrock Script API.
 
 ### Prerequisites
+
 - Node.js (LTS version)
 - npm (comes with Node.js)
 - Visual Studio Code (recommended)
@@ -277,17 +300,20 @@ This addon is built with TypeScript and uses the Minecraft Bedrock Script API.
 ### Setup Development Environment
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/eriscs01/es-loot-rush.git
    cd es-loot-rush
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Build and deploy:
+
    ```bash
    npm run local-deploy
    ```
@@ -298,6 +324,7 @@ This addon is built with TypeScript and uses the Minecraft Bedrock Script API.
    ```
 
 ### Project Structure
+
 ```
 es-loot-rush/
 ├── behavior_packs/ES-Loot-Rush/    # Behavior pack files
@@ -316,6 +343,7 @@ es-loot-rush/
 ```
 
 ### Build Commands
+
 ```bash
 npm run build             # Build TypeScript to JavaScript
 npm run local-deploy      # Build and deploy to Minecraft folder

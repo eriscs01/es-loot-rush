@@ -13,8 +13,8 @@
 The game can be configured using admin commands before starting:
 
 - **Challenge Distribution**:
-  - Easy challenges per round (default: 3, max: 10)
-  - Medium challenges per round (default: 2, max: 10)
+  - Easy challenges per round (default: 6, max: 10)
+  - Medium challenges per round (default: 3, max: 10)
   - Hard challenges per round (default: 1, max: 10)
   - **Total challenges per round**: Maximum of 10 (combined across all difficulties)
 - **Game Length**:
@@ -24,17 +24,17 @@ The game can be configured using admin commands before starting:
 **Configuration Commands** (must be set before game starts):
 
 - `lr:config` - View current settings
-- `lr:config:set <key> <value>` - Modify a setting
-- `lr:config:reset` - Reset to defaults
+- `lr:configset <key> <value>` - Modify a setting
+- `lr:configreset` - Reset to defaults
 
 **Example**: To create a shorter game with more challenges:
 
 ```
-lr:config:set totalRounds 3
-lr:config:set roundDurationTicks 12000
-lr:config:set easyChallengeCount 5
-lr:config:set mediumChallengeCount 3
-lr:config:set hardChallengeCount 2
+lr:configset totalRounds 3
+lr:configset roundDurationTicks 12000
+lr:configset easyChallengeCount 5
+lr:configset mediumChallengeCount 3
+lr:configset hardChallengeCount 2
 ```
 
 **Important**: The total number of challenges (easy + medium + hard) cannot exceed 10 per round due to HUD display limitations. If your configuration exceeds this limit, only the first 10 challenges will be displayed and tracked.
@@ -99,13 +99,13 @@ Each round (default duration: 15 minutes):
 
 **Easy (10-20 points)**
 
-- Common blocks: 64 cobblestone, 32 oak logs, 8 iron ore
-- Basic food: 16 bread, 16 cooked meat
+- Common blocks: 32 cobblestone, 16 oak logs, 4 iron ore
+- Basic food: 8 bread, 8 cooked meat
 
 **Medium (25-45 points)**
 
-- Mob drops: 8 gunpowder, 5 ender pearls, 8 spider eyes
-- Processed materials: 4 iron blocks, diamond pickaxe, 8 bookshelves
+- Mob drops: 4 gunpowder, 3 ender pearls, 4 spider eyes
+- Processed materials: 2 iron blocks, diamond pickaxe, 4 bookshelves
 
 **Hard (50-75 points)**
 
@@ -139,14 +139,14 @@ Each round (default duration: 15 minutes):
 
 **Default Configuration (Round 1 Challenges):**
 
-- Stone Age Stockpile: 64 Cobblestone (10 pts) ✓ Crimson - 10 pts awarded, locked
-- Miner's First Strike: 16 Coal (12 pts) ✓ Azure - 12 pts awarded, locked
-- Iron Seeker: 8 Iron Ore (18 pts) - Still available
-- Creeper's Gift: 8 Gunpowder (35 pts) - Still available
-- Iron Forged: 4 Iron Blocks (32 pts) - Still available
+- Stone Age Stockpile: 32 Cobblestone (10 pts) ✓ Crimson - 10 pts awarded, locked
+- Miner's First Strike: 8 Coal (12 pts) ✓ Azure - 12 pts awarded, locked
+- Iron Seeker: 4 Iron Ore (18 pts) - Still available
+- Creeper's Gift: 4 Gunpowder (35 pts) - Still available
+- Iron Forged: 2 Iron Blocks (32 pts) - Still available
 - Golden Delicacy: 1 Golden Apple (60 pts) - Still available
 
-**Total Available: 167 points** (3 Easy + 2 Medium + 1 Hard = 6 challenges)
+**Total Available: 179 points** (6 Easy + 3 Medium + 1 Hard = 10 challenges)
 
 **With Custom Configuration** (e.g., 6 Easy, 3 Medium, 1 Hard):
 
@@ -171,10 +171,10 @@ All commands require **GameDirectors** permission (Operator level 1+):
 **Configuration** (use before starting game):
 
 - `lr:config` - View current configuration settings
-- `lr:config:set <key> <value>` - Set a configuration value
+- `lr:configset <key> <value>` - Set a configuration value
   - Keys: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`
   - **Recommended**: Keep total challenges (easy + medium + hard) at 10 or fewer
-- `lr:config:reset` - Reset all settings to defaults
+- `lr:configreset` - Reset all settings to defaults
 
 **Game Management**:
 
@@ -183,15 +183,14 @@ All commands require **GameDirectors** permission (Operator level 1+):
 - `lr:forceround <1-N>` - Jump to a specific round
 - `lr:setscore <crimson|azure> <points>` - Manually adjust team score
 
-**Debug**:
+**Debug & Utilities**:
 
 - `lr:debug <true|false>` - Toggle debug logging
-- `lr:backup` - Create backup of current game state
-- `lr:restore` - Restore from backup
+- `lr:givebook` - Give challenges book to all players
 
 ### **Game Flow**
 
-1. **Configuration** (Optional): Admin adjusts settings via `lr:config:set`
+1. **Configuration** (Optional): Admin adjusts settings via `lr:configset`
 2. **Setup**: Admin runs `lr:teamup` to form teams and place chests
 3. **Start**: Admin runs `lr:start` to begin Round 1
 4. **Rounds**: Auto-transitions every round based on configured duration
@@ -222,39 +221,39 @@ All commands require **GameDirectors** permission (Operator level 1+):
 
 ### **Easy Challenges (10-20 points)**
 
-- **Stone Age Stockpile**: 64 Cobblestone (10 pts)
-- **Lumberjack's Load**: 32 Logs (any wood) (12 pts)
-- **Farmer's Bounty**: 16 Bread (15 pts)
-- **Miner's First Strike**: 16 Coal (12 pts)
-- **Wool Gatherer**: 12 Wool (any color) (15 pts)
-- **Hunter's Feast**: 16 Cooked Meat (any type) (15 pts)
-- **Iron Seeker**: 8 Iron Ore (18 pts)
+- **Stone Age Stockpile**: 32 Cobblestone (10 pts)
+- **Lumberjack's Load**: 16 Logs (any wood) (12 pts)
+- **Farmer's Bounty**: 8 Bread (15 pts)
+- **Miner's First Strike**: 8 Coal (12 pts)
+- **Wool Gatherer**: 8 Wool (any color) (15 pts)
+- **Hunter's Feast**: 8 Cooked Meat (any type) (15 pts)
+- **Iron Seeker**: 4 Iron Ore (18 pts)
 - **Builder's Cache**: 32 Planks (any wood) (10 pts)
-- **Dirt Digger**: 64 Dirt/Grass Blocks (10 pts)
-- **Clay Collector**: 16 Clay Balls (15 pts)
-- **Sand Hauler**: 32 Sand (12 pts)
-- **Flower Power**: 10 Different Flowers (18 pts)
-- **Gravel Grab**: 32 Gravel (12 pts)
-- **Bone Collector**: 8 Bones (15 pts)
-- **String Theory**: 12 String (18 pts)
+- **Dirt Digger**: 32 Dirt/Grass Blocks (10 pts)
+- **Clay Collector**: 8 Clay Balls (15 pts)
+- **Sand Hauler**: 16 Sand (12 pts)
+- **Flower Power**: 6 Different Flowers (18 pts)
+- **Gravel Grab**: 16 Gravel (12 pts)
+- **Bone Collector**: 4 Bones (15 pts)
+- **String Theory**: 6 String (18 pts)
 
 ### **Medium Challenges (25-45 points)**
 
-- **Creeper's Gift**: 8 Gunpowder (35 pts)
-- **Enderman's Pearls**: 5 Ender Pearls (40 pts)
-- **Spider's Silk**: 8 Spider Eyes (30 pts)
-- **Iron Forged**: 4 Iron Blocks (32 pts)
+- **Creeper's Gift**: 4 Gunpowder (35 pts)
+- **Enderman's Pearls**: 3 Ender Pearls (40 pts)
+- **Spider's Silk**: 4 Spider Eyes (30 pts)
+- **Iron Forged**: 2 Iron Blocks (32 pts)
 - **Diamond Toolsmith**: 1 Diamond Pickaxe (40 pts)
-- **Librarian's Pride**: 8 Bookshelves (35 pts)
-- **Redstone Engineer**: 32 Redstone Dust (30 pts)
-- **Golden Ingots**: 4 Gold Ingots (38 pts)
-- **Slime Hunter**: 4 Slimeballs (42 pts)
+- **Librarian's Pride**: 4 Bookshelves (35 pts)
+- **Redstone Engineer**: 16 Redstone Dust (30 pts)
+- **Golden Ingots**: 2 Gold Ingots (38 pts)
+- **Slime Hunter**: 2 Slimeballs (42 pts)
 - **Enchanter's Start**: 1 Enchanting Table (45 pts)
-- **Treasure Map**: 1 Buried Treasure Map (40 pts)
-- **Melon Merchant**: 16 Melons (28 pts)
-- **Pumpkin Patch**: 8 Carved Pumpkins (30 pts)
-- **Leather Worker**: 8 Leather (32 pts)
-- **Phantom Membrane**: 2 Phantom Membranes (45 pts)
+- **Treasure Map**: 1 Map (40 pts)
+- **Melon Merchant**: 8 Melons (28 pts)
+- **Pumpkin Patch**: 4 Carved Pumpkins (30 pts)
+- **Leather Worker**: 4 Leather (32 pts)
+- **Phantom Membrane**: 1 Phantom Membrane (45 pts)
 
 ### **Hard Challenges (50-75 points)**
 
@@ -277,16 +276,16 @@ Each round randomly selects challenges based on configuration:
 
 **Default Configuration**:
 
-- **3 Easy** (10-20 pts)
-- **2 Medium** (25-45 pts)
+- **6 Easy** (10-20 pts)
+- **3 Medium** (25-45 pts)
 - **1 Hard** (50-75 pts)
-- **Total**: 6 challenges, ~145-215 points available per round
+- **Total**: 10 challenges, ~200-350 points available per round
 
 **Customizable via commands**:
 
-- Use `lr:config:set easyChallengeCount <number>` to change easy count (1-10)
-- Use `lr:config:set mediumChallengeCount <number>` to change medium count (1-10)
-- Use `lr:config:set hardChallengeCount <number>` to change hard count (1-10)
+- Use `lr:configset easyChallengeCount <number>` to change easy count (0-10)
+- Use `lr:configset mediumChallengeCount <number>` to change medium count (0-10)
+- Use `lr:configset hardChallengeCount <number>` to change hard count (0-10)
 - **Maximum total**: 10 challenges per round (HUD limitation)
 
 **Recommended Configurations**:
