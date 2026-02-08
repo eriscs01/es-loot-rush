@@ -4,11 +4,29 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import dotenv from "dotenv";
+import chalk from "chalk";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+const square = "\u25a0";
+
+function log(message) {
+  const now = new Date();
+  const timestamp = chalk.gray(`[${now.toLocaleTimeString()}]`);
+  console.log(timestamp, chalk.green(square), message);
+}
+
+function logError(message, error) {
+  const now = new Date();
+  const timestamp = chalk.gray(`[${now.toLocaleTimeString()}]`);
+  console.error(timestamp, chalk.redBright("x"), message);
+  if (error) {
+    console.error(timestamp, chalk.redBright("x"), chalk.yellow(error.stack || error.message || error));
+  }
+}
 
 const sftp = new Client();
 
@@ -36,7 +54,7 @@ async function uploadDir(local, remote) {
       } catch (e) {}
       await uploadDir(localPath, remotePath);
     } else {
-      console.log(`[sftp-deploy] Uploading ${localPath} -> ${remotePath}`);
+      log(`Uploading ${localPath} -> ${remotePath}`);
       await sftp.put(localPath, remotePath);
     }
   }
@@ -45,7 +63,7 @@ async function uploadDir(local, remote) {
 sftp
   .connect(config)
   .then(async () => {
-    console.log("[sftp-deploy] Connected. Uploading dist folder...");
+    log("started 'sftp-upload'");
     return Promise.all([
       uploadDir(localBPManifestDir, remoteBPDir),
       uploadDir(localBPScriptDir, remoteBPDir),
@@ -53,10 +71,10 @@ sftp
     ]);
   })
   .then(() => {
-    console.log("[sftp-deploy] Upload complete!");
+    log("finished 'sftp-upload'");
     return sftp.end();
   })
   .catch((err) => {
-    console.error("[sftp-deploy] Error:", err);
+    logError("Error:", err);
     process.exit(1);
   });
