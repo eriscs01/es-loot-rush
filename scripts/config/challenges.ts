@@ -12,6 +12,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 32,
       points: 10,
       difficulty: "easy",
+      icon: "textures/blocks/cobblestone",
     },
     {
       id: "lumberjacks_load",
@@ -32,6 +33,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 12,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/log_oak",
     },
     {
       id: "farmers_bounty",
@@ -41,6 +43,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/bread",
     },
     {
       id: "miners_first_strike",
@@ -50,6 +53,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/coal",
     },
     {
       id: "wool_gatherer",
@@ -77,6 +81,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 15,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/wool_colored_black",
     },
     {
       id: "hunters_feast",
@@ -95,6 +100,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 15,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/items/beef_cooked",
     },
     {
       id: "iron_seeker",
@@ -104,6 +110,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 18,
       difficulty: "easy",
+      icon: "textures/items/raw_iron",
     },
     {
       id: "builders_cache",
@@ -127,6 +134,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 10,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/planks_acacia",
     },
     {
       id: "dirt_digger",
@@ -137,6 +145,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 10,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/dirt",
     },
     {
       id: "clay_collector",
@@ -146,6 +155,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/clay_ball",
     },
     {
       id: "sand_hauler",
@@ -155,6 +165,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 12,
       difficulty: "easy",
+      icon: "textures/blocks/sand",
     },
     {
       id: "flower_power",
@@ -179,6 +190,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 18,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/flower_rose",
     },
     {
       id: "gravel_grab",
@@ -188,6 +200,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 12,
       difficulty: "easy",
+      icon: "textures/blocks/gravel",
     },
     {
       id: "bone_collector",
@@ -197,6 +210,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/bone",
     },
     {
       id: "string_theory",
@@ -206,6 +220,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 6,
       points: 18,
       difficulty: "easy",
+      icon: "textures/items/string",
     },
     {
       id: "sugar_rush",
@@ -215,6 +230,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/reeds",
     },
     {
       id: "cactus_collector",
@@ -224,6 +240,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 15,
       difficulty: "easy",
+      icon: "textures/blocks/cactus_side",
     },
     {
       id: "mushroom_hunt",
@@ -234,6 +251,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 12,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/mushroom_red",
     },
     {
       id: "feather_collector",
@@ -243,6 +261,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 6,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/feather",
     },
     {
       id: "egg_basket",
@@ -252,6 +271,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/egg",
     },
     {
       id: "flint_finder",
@@ -261,6 +281,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/flint",
     },
     {
       id: "snowball_stockpile",
@@ -270,6 +291,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 10,
       difficulty: "easy",
+      icon: "textures/items/snowball",
     },
     {
       id: "apple_orchard",
@@ -279,6 +301,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 18,
       difficulty: "easy",
+      icon: "textures/items/apple",
     },
     {
       id: "stick_stack",
@@ -288,6 +311,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 32,
       points: 10,
       difficulty: "easy",
+      icon: "textures/items/stick",
     },
     {
       id: "torch_lighter",
@@ -297,6 +321,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 12,
       difficulty: "easy",
+      icon: "textures/blocks/torch_on",
     },
     {
       id: "charcoal_burner",
@@ -306,6 +331,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/charcoal",
     },
     {
       id: "kelp_harvest",
@@ -315,6 +341,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/kelp",
     },
     {
       id: "bamboo_gatherer",
@@ -324,6 +351,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/bamboo",
     },
     {
       id: "paper_maker",
@@ -333,6 +361,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/paper",
     },
     {
       id: "sapling_collector",
@@ -352,6 +381,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 12,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/sapling_oak",
     },
     {
       id: "wheat_harvest",
@@ -361,6 +391,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/wheat",
     },
     {
       id: "potato_picker",
@@ -370,6 +401,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/potato",
     },
     {
       id: "carrot_collector",
@@ -379,6 +411,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/carrot",
     },
     {
       id: "beetroot_gatherer",
@@ -388,6 +421,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/beetroot",
     },
     {
       id: "pumpkin_harvest",
@@ -397,6 +431,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 15,
       difficulty: "easy",
+      icon: "textures/blocks/pumpkin_side",
     },
     {
       id: "melon_slice_stack",
@@ -406,6 +441,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 12,
       difficulty: "easy",
+      icon: "textures/items/melon",
     },
     {
       id: "vine_climber",
@@ -415,6 +451,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/blocks/vine",
     },
     {
       id: "lily_pad_collector",
@@ -424,6 +461,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 12,
       difficulty: "easy",
+      icon: "textures/blocks/carried_waterlily",
     },
     {
       id: "sweet_berries",
@@ -433,6 +471,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 15,
       difficulty: "easy",
+      icon: "textures/items/sweet_berries",
     },
     {
       id: "glow_berries",
@@ -442,6 +481,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 6,
       points: 18,
       difficulty: "easy",
+      icon: "textures/items/glow_berries",
     },
     {
       id: "crafting_table_maker",
@@ -451,6 +491,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 10,
       difficulty: "easy",
+      icon: "textures/blocks/crafting_table_top",
     },
     {
       id: "chest_builder",
@@ -460,6 +501,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 12,
       difficulty: "easy",
+      icon: "textures/blocks/chest_front",
     },
     {
       id: "fence_crafter",
@@ -484,6 +526,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 12,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/blocks/planks_acacia",
     },
     {
       id: "door_maker",
@@ -516,6 +559,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 10,
       variant: "any",
       difficulty: "easy",
+      icon: "textures/items/door_acacia",
     },
   ],
   medium: [
@@ -527,6 +571,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 35,
       difficulty: "medium",
+      icon: "textures/items/gunpowder",
     },
     {
       id: "endermans_pearls",
@@ -536,6 +581,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 3,
       points: 40,
       difficulty: "medium",
+      icon: "textures/items/ender_pearl",
     },
     {
       id: "spiders_silk",
@@ -545,6 +591,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 30,
       difficulty: "medium",
+      icon: "textures/items/spider_eye",
     },
     {
       id: "iron_forged",
@@ -554,6 +601,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 32,
       difficulty: "medium",
+      icon: "textures/blocks/iron_block",
     },
     {
       id: "diamond_toolsmith",
@@ -563,6 +611,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 40,
       difficulty: "medium",
+      icon: "textures/items/diamond_pickaxe",
     },
     {
       id: "librarians_pride",
@@ -572,6 +621,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 35,
       difficulty: "medium",
+      icon: "textures/blocks/bookshelf",
     },
     {
       id: "redstone_engineer",
@@ -581,6 +631,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 30,
       difficulty: "medium",
+      icon: "textures/items/redstone_dust",
     },
     {
       id: "golden_ingots",
@@ -590,6 +641,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 38,
       difficulty: "medium",
+      icon: "textures/items/gold_ingot",
     },
     {
       id: "slime_hunter",
@@ -599,6 +651,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 42,
       difficulty: "medium",
+      icon: "textures/items/slimeball",
     },
     {
       id: "enchanters_start",
@@ -608,6 +661,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 45,
       difficulty: "medium",
+      icon: "textures/blocks/enchanting_table_top",
     },
     {
       id: "treasure_map",
@@ -617,6 +671,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 40,
       difficulty: "medium",
+      icon: "textures/items/map_filled",
     },
     {
       id: "melon_merchant",
@@ -626,6 +681,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 28,
       difficulty: "medium",
+      icon: "textures/blocks/melon_side",
     },
     {
       id: "pumpkin_patch",
@@ -635,6 +691,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 30,
       difficulty: "medium",
+      icon: "textures/blocks/pumpkin_face_on",
     },
     {
       id: "leather_worker",
@@ -644,6 +701,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 32,
       difficulty: "medium",
+      icon: "textures/items/leather",
     },
     {
       id: "phantom_membrane",
@@ -653,6 +711,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 45,
       difficulty: "medium",
+      icon: "textures/items/phantom_membrane",
     },
     {
       id: "cocoa_farmer",
@@ -662,6 +721,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 35,
       difficulty: "medium",
+      icon: "textures/items/dye_powder_brown",
     },
     {
       id: "ink_sac_collector",
@@ -671,6 +731,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 4,
       points: 30,
       difficulty: "medium",
+      icon: "textures/items/ink_sack",
     },
     {
       id: "lapis_miner",
@@ -680,6 +741,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 32,
       difficulty: "medium",
+      icon: "textures/items/dye_powder_blue",
     },
     {
       id: "dye_collection",
@@ -707,6 +769,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 35,
       variant: "any",
       difficulty: "medium",
+      icon: "textures/items/dye_powder_black",
     },
     {
       id: "obsidian_harvest",
@@ -716,6 +779,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 3,
       points: 42,
       difficulty: "medium",
+      icon: "textures/blocks/obsidian",
     },
     {
       id: "arrow_crafter",
@@ -725,6 +789,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 30,
       difficulty: "medium",
+      icon: "textures/items/arrow",
     },
     {
       id: "prismarine_collector",
@@ -734,6 +799,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 38,
       difficulty: "medium",
+      icon: "textures/items/prismarine_shard",
     },
     {
       id: "rabbit_foot",
@@ -743,6 +809,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 40,
       difficulty: "medium",
+      icon: "textures/items/rabbit_foot",
     },
     {
       id: "brick_maker",
@@ -752,6 +819,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 28,
       difficulty: "medium",
+      icon: "textures/items/brick",
     },
     {
       id: "sugar_producer",
@@ -761,6 +829,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 28,
       difficulty: "medium",
+      icon: "textures/items/sugar",
     },
     {
       id: "bowl_crafter",
@@ -770,6 +839,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 6,
       points: 30,
       difficulty: "medium",
+      icon: "textures/items/bowl",
     },
     {
       id: "glass_maker",
@@ -779,6 +849,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 30,
       difficulty: "medium",
+      icon: "textures/blocks/glass",
     },
     {
       id: "dried_kelp_producer",
@@ -788,6 +859,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 16,
       points: 32,
       difficulty: "medium",
+      icon: "textures/items/dried_kelp",
     },
     {
       id: "honey_collector",
@@ -797,6 +869,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 2,
       points: 35,
       difficulty: "medium",
+      icon: "textures/items/honey_bottle",
     },
     {
       id: "honeycomb_gatherer",
@@ -806,6 +879,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 3,
       points: 35,
       difficulty: "medium",
+      icon: "textures/items/honeycomb",
     },
   ],
   hard: [
@@ -817,6 +891,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 55,
       difficulty: "hard",
+      icon: "textures/items/book_enchanted",
     },
     {
       id: "golden_delicacy",
@@ -826,6 +901,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 60,
       difficulty: "hard",
+      icon: "textures/items/apple_golden",
     },
     {
       id: "village_vault",
@@ -835,6 +911,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 8,
       points: 65,
       difficulty: "hard",
+      icon: "textures/items/emerald",
     },
     {
       id: "mob_tamer",
@@ -844,6 +921,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 70,
       difficulty: "hard",
+      icon: "textures/items/name_tag",
     },
     {
       id: "music_disc_hunter",
@@ -876,6 +954,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       points: 65,
       variant: "any",
       difficulty: "hard",
+      icon: "textures/items/record_11",
     },
     {
       id: "diamond_fortune",
@@ -885,6 +964,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 3,
       points: 60,
       difficulty: "hard",
+      icon: "textures/items/diamond",
     },
     {
       id: "totem_raid",
@@ -894,6 +974,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 75,
       difficulty: "hard",
+      icon: "textures/items/totem",
     },
     {
       id: "horse_trader",
@@ -903,6 +984,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 55,
       difficulty: "hard",
+      icon: "textures/items/saddle",
     },
     {
       id: "oceans_heart",
@@ -912,6 +994,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 70,
       difficulty: "hard",
+      icon: "textures/items/heartofthesea_closed",
     },
     {
       id: "trident_bearer",
@@ -921,6 +1004,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 75,
       difficulty: "hard",
+      icon: "textures/items/trident",
     },
     {
       id: "bell_ringer",
@@ -930,6 +1014,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 50,
       difficulty: "hard",
+      icon: "textures/items/villagebell",
     },
     {
       id: "nautilus_shell",
@@ -939,6 +1024,7 @@ export const CHALLENGES: Record<"easy" | "medium" | "hard", ChallengeDefinition[
       count: 1,
       points: 60,
       difficulty: "hard",
+      icon: "textures/items/nautilus_shell",
     },
   ],
 };

@@ -160,11 +160,13 @@ export class BookManager {
    * The handler will remain registered but will be inactive when bookUseHandler is undefined.
    */
   unregisterBookHandler(): void {
-    if (this.bookUseHandler) {
-      world.beforeEvents.itemUse.unsubscribe(this.bookUseHandler);
-    }
-    this.bookUseHandler = undefined;
-    this.debugLogger?.log("Unregistered book interaction handler");
+    system.run(() => {
+      if (this.bookUseHandler) {
+        world.beforeEvents.itemUse.unsubscribe(this.bookUseHandler);
+      }
+      this.bookUseHandler = undefined;
+      this.debugLogger?.log("Unregistered book interaction handler");
+    });
   }
 
   /**
@@ -201,7 +203,7 @@ export class BookManager {
       // Add buttons for each challenge
       activeChallenges.forEach((challenge) => {
         const buttonText = this.formatChallengeButton(challenge);
-        form.button(buttonText, `textures/items/${challenge.items[0].replace("minecraft:", "")}`);
+        form.button(buttonText, challenge.icon);
       });
 
       // Show the form
@@ -228,9 +230,6 @@ export class BookManager {
       // Show which team completed it
       const teamName = challenge.completedBy === "crimson" ? "§cCrimson" : "§bAzure";
       suffix = `§r(${teamName}§r)`;
-    } else {
-      // Available
-      suffix = "(Open)";
     }
 
     const points = `${challenge.points}pts`;

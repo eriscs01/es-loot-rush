@@ -13,6 +13,7 @@ export interface ChallengeDefinition {
   points: number;
   difficulty: "easy" | "medium" | "hard";
   variant?: "any";
+  icon: string;
 }
 export interface ChallengeRecord extends ChallengeDefinition {
   state: ChallengeState;

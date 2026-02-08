@@ -3,8 +3,8 @@ import { DYNAMIC_KEYS } from "../config/constants";
 import { PropertyStore } from "./PropertyStore";
 
 const DEFAULT_CONFIG: GameConfig = {
-  easyChallengeCount: 3,
-  mediumChallengeCount: 2,
+  easyChallengeCount: 6,
+  mediumChallengeCount: 3,
   hardChallengeCount: 1,
   totalRounds: 4,
   roundDurationTicks: 18000,
