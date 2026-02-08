@@ -1,4 +1,4 @@
-import { Player, PlayerSpawnAfterEvent, system, Vector3, world } from "@minecraft/server";
+import { Player, PlayerLeaveBeforeEvent, PlayerSpawnAfterEvent, system, Vector3, world } from "@minecraft/server";
 import { PropertyStore } from "./PropertyStore";
 import { TeamId } from "../types";
 import { DYNAMIC_KEYS } from "../config/constants";
@@ -9,50 +9,68 @@ export class TeamManager {
   private playerTeamCache = new Map<string, TeamId>();
   private crimsonPlayers: string[] = [];
   private azurePlayers: string[] = [];
+  private allPlayers: Player[] = [];
   private spawnHandler?: (_arg0: PlayerSpawnAfterEvent) => void;
+  private leaveHandler?: (_arg0: PlayerLeaveBeforeEvent) => void;
   private readonly debugLogger: DebugLogger;
 
   constructor(private readonly propertyStore: PropertyStore) {
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
-  registerJoinHandlers(): void {
-    if (this.spawnHandler) return;
-
-    this.spawnHandler = (event) => {
-      const player = event.player;
-      const playerId = removeColorCode(player.nameTag ?? player.id);
-      this.debugLogger?.log(`[spawnHandler] Player spawned: ${playerId}`);
-      if (!this.isTeamsFormed()) {
-        this.debugLogger?.log("[spawnHandler] Teams not formed, skipping team color and spawn set.");
-        return;
-      }
-      this.applyTeamColor(player);
-      this.debugLogger?.log(`[spawnHandler] Applied team color to: ${playerId}`);
-      const spawnLoc = this.getStoredSpawn();
-      if (spawnLoc) {
-        this.setSpawnPointForPlayer(player, spawnLoc);
-        this.debugLogger?.log(
-          `[spawnHandler] Set spawn point for ${playerId} to (${spawnLoc.x}, ${spawnLoc.y}, ${spawnLoc.z})`
-        );
-      } else {
-        this.debugLogger?.log(`[spawnHandler] No stored spawn location for ${playerId}`);
-      }
-    };
-
-    const spawnHandler = this.spawnHandler.bind(this);
-    system.run(() => {
-      world.afterEvents.playerSpawn.subscribe(spawnHandler);
-    });
+  registerPlayerHandlers(): void {
+    if (!this.spawnHandler) {
+      this.spawnHandler = (event) => {
+        if (!event.initialSpawn) return;
+        const player = event.player;
+        this.allPlayers.push(player);
+        const playerId = removeColorCode(player.nameTag ?? player.id);
+        this.debugLogger?.log(`[spawnHandler] Player spawned: ${playerId}`);
+        if (!this.isTeamsFormed()) {
+          this.debugLogger?.log("[spawnHandler] Teams not formed, skipping team color and spawn set.");
+          return;
+        }
+        this.applyTeamColor(player);
+        this.debugLogger?.log(`[spawnHandler] Applied team color to: ${playerId}`);
+        const spawnLoc = this.getStoredSpawn();
+        if (spawnLoc) {
+          this.setSpawnPointForPlayer(player, spawnLoc);
+          this.debugLogger?.log(
+            `[spawnHandler] Set spawn point for ${playerId} to (${spawnLoc.x}, ${spawnLoc.y}, ${spawnLoc.z})`
+          );
+        } else {
+          this.debugLogger?.log(`[spawnHandler] No stored spawn location for ${playerId}`);
+        }
+      };
+      const spawnHandler = this.spawnHandler.bind(this);
+      system.run(() => world.afterEvents.playerSpawn.subscribe(spawnHandler));
+    }
+    if (!this.leaveHandler) {
+      this.leaveHandler = (event) => {
+        const player = event.player;
+        const id = removeColorCode(player.nameTag ?? player.id);
+        this.allPlayers = this.allPlayers.filter((p) => {
+          const playerId = removeColorCode(p.nameTag ?? p.id);
+          return playerId !== id;
+        });
+        this.debugLogger?.log(`[leaveHandler] Player left: ${id}, remaining players: ${this.allPlayers.length}`);
+      };
+      const leaveHandler = this.leaveHandler.bind(this);
+      system.run(() => world.beforeEvents.playerLeave.subscribe(leaveHandler));
+    }
   }
 
-  unregisterJoinHandlers(): void {
-    if (!this.spawnHandler) return;
-    const spawnHandler = this.spawnHandler;
-    system.run(() => {
-      world.afterEvents.playerSpawn.unsubscribe(spawnHandler);
-    });
-    this.spawnHandler = undefined;
+  unregisterPlayerHandlers(): void {
+    if (this.spawnHandler) {
+      const spawnHandler = this.spawnHandler;
+      system.run(() => world.afterEvents.playerSpawn.unsubscribe(spawnHandler));
+      this.spawnHandler = undefined;
+    }
+    if (this.leaveHandler) {
+      const leaveHandler = this.leaveHandler;
+      system.run(() => world.beforeEvents.playerLeave.unsubscribe(leaveHandler));
+      this.leaveHandler = undefined;
+    }
   }
 
   formTeams(players: Player[]): void {
@@ -70,21 +88,23 @@ export class TeamManager {
     azure.forEach((p) => this.assignPlayerToTeam(p, "azure"));
     this.debugLogger?.log(`Formed teams: crimson=${crimson.length}, azure=${azure.length}`);
     this.persistRosters();
-    this.registerJoinHandlers();
+    this.registerPlayerHandlers();
+    this.allPlayers = players;
   }
 
   clearTeams(): void {
     this.playerTeamCache.clear();
     this.crimsonPlayers = [];
     this.azurePlayers = [];
+    this.allPlayers = [];
     this.propertyStore.setString(DYNAMIC_KEYS.crimsonPlayers, "[]");
     this.propertyStore.setString(DYNAMIC_KEYS.azurePlayers, "[]");
     this.debugLogger?.log("Cleared teams and rosters");
   }
 
   assignPlayerToTeam(player: Player, team: TeamId): void {
-    const id = player.nameTag ?? player.id;
-    this.playerTeamCache.set(removeColorCode(id), team);
+    const id = removeColorCode(player.nameTag ?? player.id);
+    this.playerTeamCache.set(id, team);
 
     this.debugLogger?.log(`[TeamManager] Assigned player ${id} to team ${team}`);
 
@@ -182,5 +202,16 @@ export class TeamManager {
     } catch (err) {
       this.debugLogger?.warn("Failed to reset player name tag", player.nameTag, err);
     }
+  }
+
+  getAllPlayers(): Player[] {
+    return this.allPlayers;
+  }
+
+  getTeamPlayers(teamId: TeamId): Player[] {
+    return this.allPlayers.filter((player) => {
+      const id = removeColorCode(player.nameTag ?? player.id);
+      return this.playerTeamCache.get(id) === teamId;
+    });
   }
 }

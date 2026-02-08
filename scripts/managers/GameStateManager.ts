@@ -5,8 +5,9 @@ import { TeamManager } from "./TeamManager";
 import { ChallengeManager } from "./ChallengeManager";
 import { ChallengeRecord } from "../types";
 import { ChestManager } from "./ChestManager";
-import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
+import { ScoreboardManager } from "./ScoreboardManager";
+import { BookManager } from "./BookManager";
 import { DebugLogger } from "./DebugLogger";
 import { DYNAMIC_KEYS } from "../config/constants";
 
@@ -14,6 +15,8 @@ export class GameStateManager {
   private gameActive = false;
   private gamePaused = false;
   private currentRound = 1;
+  private totalRounds = 3;
+  private roundDurationTicks = 12000;
   private roundStartTick = 0;
   private pausedAtTick = 0;
   private roundTimerHandle?: number;
@@ -30,15 +33,17 @@ export class GameStateManager {
     private readonly teamManager: TeamManager,
     private readonly challengeManager: ChallengeManager,
     private readonly chestManager: ChestManager,
-    private readonly hudManager: HUDManager,
-    private readonly audioManager?: AudioManager
+    private readonly audioManager: AudioManager,
+    private readonly scoreboardManager: ScoreboardManager,
+    private readonly bookManager: BookManager
   ) {
     void configManager;
     void teamManager;
     void challengeManager;
     void chestManager;
-    void hudManager;
     void audioManager;
+    void scoreboardManager;
+    void bookManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -68,6 +73,8 @@ export class GameStateManager {
     this.gameActive = true;
     this.gamePaused = false;
     this.currentRound = 1;
+    this.totalRounds = this.configManager.getConfigValue("totalRounds");
+    this.roundDurationTicks = this.configManager.getConfigValue("roundDurationTicks");
     this.roundStartTick = system.currentTick;
     this.pausedAtTick = 0;
     this.resetTimerWarnings();
@@ -77,7 +84,13 @@ export class GameStateManager {
     this.startRoundTimer();
     this.initiateHUDState();
     this.challengeManager.monitorCompletion(challenges);
-    this.teamManager.registerJoinHandlers();
+    this.teamManager.registerPlayerHandlers();
+
+    // Initialize and show scoreboard
+    this.scoreboardManager.initializeScoreboard();
+    this.scoreboardManager.showScoreboard();
+    this.scoreboardManager.updateScores(0, 0);
+
     this.debugLogger?.log(`Game started at tick ${this.roundStartTick}`);
   }
 
@@ -89,10 +102,14 @@ export class GameStateManager {
     this.gamePaused = false;
     this.pausedAtTick = 0;
     this.clearPauseEffects();
-    this.updatePauseHUD(false);
     this.stopRoundTimer();
     this.challengeManager.stopMonitoring();
-    this.teamManager.unregisterJoinHandlers();
+    this.teamManager.unregisterPlayerHandlers();
+
+    // Hide scoreboard on game end
+    this.scoreboardManager.hideScoreboard();
+
+    this.bookManager?.removeBooksFromAllPlayers();
     this.debugLogger?.log(`Game ended. Winner announced: ${announceWinner}`);
     if (announceWinner) {
       this.announceWinner();
@@ -117,9 +134,12 @@ export class GameStateManager {
     this.challengeManager.resetChallenges();
     this.teamManager.clearTeams();
     this.chestManager.clearChestReferences();
+    this.bookManager?.removeBooksFromAllPlayers();
+
+    // Reset scoreboard
+    this.scoreboardManager.resetScoreboard();
 
     world.getAllPlayers().forEach((p) => {
-      this.hudManager.clearHUD(p);
       this.teamManager.resetPlayerNameTag(p);
     });
 
@@ -161,13 +181,11 @@ export class GameStateManager {
   getRemainingTime(): number {
     const effectiveTick = this.gamePaused && this.pausedAtTick ? this.pausedAtTick : system.currentTick;
     const elapsed = effectiveTick - this.roundStartTick;
-    const roundDuration = this.configManager.getConfigValue("roundDurationTicks");
-    return Math.max(roundDuration - elapsed, 0);
+    return Math.max(this.roundDurationTicks - elapsed, 0);
   }
 
   transitionToNextRound(): void {
-    const totalRounds = this.configManager.getConfigValue("totalRounds");
-    if (this.currentRound >= totalRounds) {
+    if (this.currentRound >= this.totalRounds) {
       this.endGame(true);
       return;
     }
@@ -185,13 +203,9 @@ export class GameStateManager {
     const challenges = this.challengeManager.selectChallenges();
     this.challengeManager.monitorCompletion(challenges);
 
-    const players = world.getAllPlayers();
-    world.sendMessage(`§6[LOOT RUSH] §fRound ${this.currentRound} begins!`);
-    players.forEach((p) => {
-      this.hudManager.updateRoundInfo(p);
-      this.hudManager.updateTimer(p);
-      this.hudManager.updateChallenges(p, challenges);
-    });
+    const players = this.teamManager.getAllPlayers();
+    const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
+    world.sendMessage(roundMessage);
     this.audioManager?.playStartHorn(players);
   }
 
@@ -283,8 +297,16 @@ export class GameStateManager {
     if (this.roundTimerHandle !== undefined && typeof system.clearRun === "function") {
       system.clearRun(this.roundTimerHandle);
     }
-    // Check once per second (20 ticks) to minimize overhead.
-    this.roundTimerHandle = system.runInterval(() => this.handleRoundTick(), 20);
+    // Synchronize to 20-tick boundaries for consistent timing
+    const currentTick = system.currentTick;
+    const ticksSinceRoundStart = currentTick - this.roundStartTick;
+    const tickOffset = ticksSinceRoundStart % 20;
+    const delay = tickOffset === 0 ? 0 : 20 - tickOffset;
+
+    system.runTimeout(() => {
+      // Check once per second (20 ticks) to minimize overhead.
+      this.roundTimerHandle = system.runInterval(() => this.handleRoundTick(), 20);
+    }, delay);
   }
 
   private stopRoundTimer(): void {
@@ -296,38 +318,53 @@ export class GameStateManager {
   }
 
   private handleRoundTick(): void {
-    if (!this.isGameActive() || this.gamePaused) return;
+    if (!this.isGameActive()) return;
+
     const remaining = this.getRemainingTime();
-    this.handleTimerWarnings(remaining);
-    if (remaining === 0) {
-      this.transitionToNextRound();
+    const remainingSeconds = Math.floor(Math.max(remaining, 0) / 20);
+
+    // Format time as MM:SS
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+    // Color based on remaining time
+    const color = remainingSeconds <= 10 ? "§c" : remainingSeconds <= 30 ? "§6" : "§e";
+
+    // Cache the display text
+    const roundTimerText = `§fRound §e${this.currentRound}§f/§e${this.totalRounds} §7~ ${color}${timeStr}`;
+
+    // Cache players list for reuse
+    const players = this.teamManager.getAllPlayers();
+
+    // Audio warnings
+    if (remainingSeconds <= 10 && remainingSeconds > 0 && this.lastSecondWarning !== remainingSeconds) {
+      this.audioManager?.playTimerWarning10(players);
+      this.lastSecondWarning = remainingSeconds;
     }
-    this.updateAllTimers();
-  }
 
-  private handleTimerWarnings(remainingTicks: number): void {
-    const remainingSeconds = Math.ceil(Math.max(remainingTicks, 0) / 20);
-    const players = world.getAllPlayers();
-
-    // Every second at 10s and below
-    if (remainingSeconds <= 10) {
-      if (this.lastSecondWarning !== remainingSeconds) {
-        this.audioManager?.playTimerWarning10(players);
-        this.lastSecondWarning = remainingSeconds;
-      }
-      return;
-    }
-
-    // One-time 30s warning (higher pitch)
     if (!this.warned30 && remainingSeconds <= 30) {
       this.audioManager?.playTimerWarning30(players);
       this.warned30 = true;
     }
 
-    // One-time 60s warning
     if (!this.warned60 && remainingSeconds <= 60) {
       this.audioManager?.playTimerWarning60(players);
       this.warned60 = true;
+    }
+
+    // Update all players' action bars
+    const displayText = this.gamePaused ? "§c§lGAME PAUSED" : roundTimerText;
+    players.forEach((player) => {
+      try {
+        player.onScreenDisplay.setActionBar(displayText);
+      } catch (err) {
+        this.debugLogger?.warn("Failed to update player action bar", player.name, err);
+      }
+    });
+
+    if (!this.gamePaused && remaining === 0) {
+      this.transitionToNextRound();
     }
   }
 
@@ -337,18 +374,13 @@ export class GameStateManager {
     this.lastSecondWarning = undefined;
   }
 
-  private updateAllTimers(): void {
-    const players = world.getAllPlayers();
-    players.forEach((p) => this.hudManager.updateTimer(p));
-  }
-
   private applyPauseEffects(): void {
     if (this.pauseEffectHandle !== undefined && typeof system.clearRun === "function") {
       system.clearRun(this.pauseEffectHandle);
     }
 
     this.pauseEffectHandle = system.runInterval(() => {
-      const players = world.getAllPlayers();
+      const players = this.teamManager.getAllPlayers();
       players.forEach((p) => {
         try {
           p.addEffect("slowness", 40, { amplifier: 255, showParticles: false });
@@ -366,7 +398,7 @@ export class GameStateManager {
     }
     this.pauseEffectHandle = undefined;
 
-    const players = world.getAllPlayers();
+    const players = this.teamManager.getAllPlayers();
     players.forEach((p) => {
       try {
         system.run(() => {
@@ -380,10 +412,12 @@ export class GameStateManager {
   }
 
   private updatePauseHUD(paused: boolean): void {
-    system.run(() => {
-      const players = world.getAllPlayers();
-      players.forEach((p) => this.hudManager.setPaused(p, paused));
-    });
+    if (paused) {
+      world.sendMessage("§c[GAME PAUSED]");
+    } else {
+      world.sendMessage("§a[GAME RESUMED]");
+    }
+    // The unified timer will automatically pick up the paused state
   }
 
   private announceWinner(): void {
@@ -400,53 +434,69 @@ export class GameStateManager {
       winnerLabel = "Azure";
     }
 
-    const players = world.getAllPlayers();
-    players.forEach((p) => {
-      try {
-        system.run(() => {
-          p.onScreenDisplay.setTitle("§6§lGAME OVER!", {
-            subtitle,
-            fadeInDuration: 0,
-            stayDuration: 100,
-            fadeOutDuration: 10,
-          });
-        });
-      } catch (err) {
-        this.debugLogger?.warn("Failed to show game over title", p.nameTag, err);
-      }
-      this.hudManager.clearHUD(p);
-    });
+    const players = this.teamManager.getAllPlayers();
 
-    world.sendMessage(
-      `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §bAzure: ${azureScore}. §eWinner: ${winnerLabel}`
-    );
-    try {
-      const dim = world.getDimension("overworld");
-      const targets = winnerLabel === "Tie" ? ["crimson", "azure"] : [winnerLabel.toLowerCase()];
-      targets.forEach((teamId) => {
-        const loc = this.chestManager.getChestLocation(teamId as "crimson" | "azure");
-        if (loc) {
+    // Step 1: Wait 3 seconds, then show "GAME OVER!" for 5 seconds
+    system.runTimeout(() => {
+      players.forEach((p) => {
+        try {
           system.run(() => {
-            dim.spawnParticle("minecraft:firework_rocket", loc);
+            p.onScreenDisplay.setTitle("§6§lGAME OVER!", {
+              subtitle: undefined,
+              fadeInDuration: 10,
+              stayDuration: 100,
+              fadeOutDuration: 20,
+            });
           });
+        } catch (err) {
+          this.debugLogger?.warn("Failed to show game over title", p.nameTag, err);
         }
       });
-    } catch (err) {
-      this.debugLogger?.warn("Failed to spawn victory fireworks", err);
-    }
-    this.audioManager?.playVictorySounds(players);
+    }, 60); // 3 seconds
+
+    // Step 2: After game over display (3s + 6.5s = 9.5s), show winner title for 10 seconds
+    system.runTimeout(() => {
+      players.forEach((p) => {
+        try {
+          system.run(() => {
+            p.onScreenDisplay.setTitle(subtitle, {
+              subtitle: undefined,
+              fadeInDuration: 20,
+              stayDuration: 200,
+              fadeOutDuration: 20,
+            });
+          });
+        } catch (err) {
+          this.debugLogger?.warn("Failed to show victory title", p.nameTag, err);
+        }
+      });
+      this.audioManager?.playVictorySounds(players);
+    }, 190); // 9.5 seconds
+
+    // Step 3: After all titles (3s + 6.5s + 12s = 21.5s), send messages and effects
+    system.runTimeout(() => {
+      world.sendMessage(
+        `§6[LOOT RUSH] §fGame over! §cCrimson: ${crimsonScore} §f| §bAzure: ${azureScore}. §eWinner: ${winnerLabel}`
+      );
+      try {
+        const dim = world.getDimension("overworld");
+        const targets = winnerLabel === "Tie" ? ["crimson", "azure"] : [winnerLabel.toLowerCase()];
+        targets.forEach((teamId) => {
+          const loc = this.chestManager.getChestLocation(teamId as "crimson" | "azure");
+          if (loc) {
+            system.run(() => {
+              dim.spawnParticle("minecraft:firework_rocket", loc);
+            });
+          }
+        });
+      } catch (err) {
+        this.debugLogger?.warn("Failed to spawn victory fireworks", err);
+      }
+    }, 430); // 21.5 seconds
   }
 
   private initiateHUDState(): void {
-    system.run(() => {
-      const players = world.getAllPlayers();
-      const challenges = this.challengeManager.getActiveChallenges();
-      players.forEach((p) => {
-        this.hudManager.updateRoundInfo(p);
-        this.hudManager.updateTimer(p);
-        this.hudManager.updateScores(p);
-        this.hudManager.updateChallenges(p, challenges);
-      });
-    });
+    const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
+    world.sendMessage(roundMessage);
   }
 }

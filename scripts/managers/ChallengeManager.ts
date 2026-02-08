@@ -5,10 +5,10 @@ import { CHALLENGES } from "../config/challenges";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { ChallengeDefinition, ChallengeRecord, TeamId } from "../types";
 import { TeamManager } from "./TeamManager";
-import { HUDManager } from "./HUDManager";
 import { AudioManager } from "./AudioManager";
 import { DebugLogger } from "./DebugLogger";
 import { ChestManager } from "./ChestManager";
+import { ScoreboardManager } from "./ScoreboardManager";
 
 export class ChallengeManager {
   private challengePool: ChallengeDefinition[] = [];
@@ -21,15 +21,15 @@ export class ChallengeManager {
     private readonly propertyStore: PropertyStore,
     private readonly configManager: ConfigManager,
     private readonly teamManager: TeamManager,
-    private readonly hudManager: HUDManager,
     private readonly audioManager: AudioManager,
-    private readonly chestManager: ChestManager
+    private readonly chestManager: ChestManager,
+    private readonly scoreboardManager: ScoreboardManager
   ) {
     void configManager;
     void teamManager;
-    void hudManager;
     void audioManager;
     void chestManager;
+    void scoreboardManager;
     this.challengePool = [...CHALLENGES.easy, ...CHALLENGES.medium, ...CHALLENGES.hard];
     this.debugLogger = new DebugLogger(propertyStore);
   }
@@ -171,13 +171,8 @@ export class ChallengeManager {
     const teamLabel = team === "crimson" ? "§cCrimson Crusaders" : "§bAzure Architects";
     world.sendMessage(`§6[LOOT RUSH] ${teamLabel} §fcompleted "${challengeLabel}" (+${challenge.points} pts)`);
 
-    const players = world.getAllPlayers();
-    const winners = players.filter((p) => this.teamManager.getPlayerTeam(p) === team);
-    const others = players.filter((p) => {
-      const t = this.teamManager.getPlayerTeam(p);
-      return t && t !== team;
-    });
-    this.audioManager?.playChallengeComplete(winners, others);
+    const winners = this.teamManager.getTeamPlayers(team);
+    this.audioManager?.playChallengeComplete(winners);
 
     if (chestLocation) {
       try {
@@ -189,20 +184,9 @@ export class ChallengeManager {
       this.chestManager.removeChallengeItems(container, challenge);
     }
 
-    const active = this.getActiveChallenges();
-    const newScore = this.teamManager.getTeamScore(team);
-    const challengeIndex = active.findIndex((c) => c.id === challenge.id);
-
-    players.forEach((p) => {
-      if (challengeIndex !== -1 && challengeIndex < 10) {
-        system.runTimeout(() => {
-          this.hudManager.completeChallenge(p, challengeIndex, challenge, team);
-        }, 5);
-      }
-      system.runTimeout(() => {
-        this.hudManager.updateScore(p, team, newScore);
-      }, 10);
-    });
+    const crimson = this.teamManager.getTeamScore("crimson");
+    const azure = this.teamManager.getTeamScore("azure");
+    this.scoreboardManager.updateScores(crimson, azure);
 
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
     return true;

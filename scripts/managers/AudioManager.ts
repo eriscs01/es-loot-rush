@@ -16,25 +16,19 @@ export class AudioManager {
   } = {
     at60: { soundId: "note.bell", pitch: 1.0 },
     at30: { soundId: "note.bell", pitch: 2.0 },
-    at10: { soundId: "note.xylobone", pitch: 2.0 },
+    at10: { soundId: "note.bell", pitch: 2.0 },
   };
 
   playTeamFormationSounds(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "entity.wither.spawn"));
+    players.forEach((player) => this.playSound(player, "mob.wither.spawn"));
   }
 
   playTeamShuffleTick(players: Player[]): void {
     players.forEach((player) => this.playSound(player, "random.click"));
   }
 
-  playTeamReveal(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
-  }
-
-  playChallengeComplete(winners: Player[], others: Player[]): void {
+  playChallengeComplete(winners: Player[]): void {
     winners.forEach((player) => this.playSound(player, "random.levelup"));
-    // Explicitly silent for opposing team
-    void others;
   }
 
   playTimerWarning60(players: Player[]): void {
@@ -53,11 +47,11 @@ export class AudioManager {
   }
 
   playVictorySounds(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "ui.toast.challenge_complete"));
+    players.forEach((player) => this.playSound(player, "challenge.complete"));
   }
 
   playStartHorn(players: Player[]): void {
-    players.forEach((player) => this.playSound(player, "raid.horn"));
+    players.forEach((player) => this.playSound(player, "horn.call.1"));
   }
 
   playAccessDenied(players: Player[]): void {
