@@ -16,6 +16,7 @@ export class ChallengeManager {
   private completedChallenges: ChallengeRecord[] = [];
   private monitorHandle?: number;
   private readonly debugLogger: DebugLogger;
+  private onAllChallengesCompletedCallback?: () => void;
 
   constructor(
     private readonly propertyStore: PropertyStore,
@@ -189,6 +190,13 @@ export class ChallengeManager {
     this.scoreboardManager.updateScores(crimson, azure);
 
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
+
+    // Check if all challenges are completed
+    if (this.areAllChallengesCompleted() && this.onAllChallengesCompletedCallback) {
+      this.debugLogger?.log("All challenges completed, triggering callback");
+      this.onAllChallengesCompletedCallback();
+    }
+
     return true;
   }
 
@@ -207,6 +215,14 @@ export class ChallengeManager {
   getCompletedChallenges(): ChallengeRecord[] {
     this.completedChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.completedChallenges, []);
     return [...this.completedChallenges];
+  }
+
+  areAllChallengesCompleted(): boolean {
+    return this.activeChallenges.length > 0 && this.activeChallenges.every((c) => c.state === "completed");
+  }
+
+  setOnAllChallengesCompletedCallback(callback: () => void): void {
+    this.onAllChallengesCompletedCallback = callback;
   }
 
   private persistActive(): void {

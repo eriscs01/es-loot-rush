@@ -86,6 +86,11 @@ export class GameStateManager {
     this.challengeManager.monitorCompletion(challenges);
     this.teamManager.registerPlayerHandlers();
 
+    // Set up callback for auto next round
+    this.challengeManager.setOnAllChallengesCompletedCallback(() => {
+      this.onAllChallengesCompleted();
+    });
+
     // Initialize and show scoreboard
     this.scoreboardManager.initializeScoreboard();
     this.scoreboardManager.showScoreboard();
@@ -203,6 +208,11 @@ export class GameStateManager {
     const challenges = this.challengeManager.selectChallenges();
     this.challengeManager.monitorCompletion(challenges);
 
+    // Re-set callback for the new round
+    this.challengeManager.setOnAllChallengesCompletedCallback(() => {
+      this.onAllChallengesCompleted();
+    });
+
     const players = this.teamManager.getAllPlayers();
     const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
     world.sendMessage(roundMessage);
@@ -216,6 +226,25 @@ export class GameStateManager {
 
   isGameActive(): boolean {
     return this.propertyStore.getBoolean(DYNAMIC_KEYS.gameActive, this.gameActive);
+  }
+
+  private onAllChallengesCompleted(): void {
+    const autoNextRound = this.configManager.getConfigValue("autoNextRound");
+    if (!autoNextRound) {
+      return;
+    }
+
+    this.debugLogger?.log("All challenges completed, auto-transitioning to next round");
+
+    // Announce that all challenges are completed
+    world.sendMessage("§6[LOOT RUSH] §fAll challenges completed! Starting next round in 5 seconds...");
+
+    // Wait 5 seconds before transitioning to give players time to see the message
+    system.runTimeout(() => {
+      if (this.isGameActive()) {
+        this.transitionToNextRound();
+      }
+    }, 100); // 5 seconds = 100 ticks
   }
 
   private registerPauseGuards(): void {
