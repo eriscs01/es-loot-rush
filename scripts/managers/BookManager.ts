@@ -211,13 +211,15 @@ export class BookManager {
         form.button(buttonText, challenge.icon);
       });
 
-      // Play book open sound
+      // Play book open sound before showing the form
       this.audioManager.playBookOpen(player);
 
       // Show the form
       const response = await form.show(player);
 
-      // Play book close sound when form is closed
+      // Play book close sound after form is dismissed
+      // This plays regardless of whether the user canceled or selected a button,
+      // since the form is display-only and both actions represent closing the book
       this.audioManager.playBookClose(player);
 
       // The form is display-only, so we don't need to handle the response
