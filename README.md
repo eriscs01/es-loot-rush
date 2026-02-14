@@ -35,6 +35,7 @@ products:
 
 - **Challenge Distribution**: Customize easy/medium/hard challenge counts per round (max 10 total)
 - **Game Length**: Adjust total rounds and round duration
+- **Round Progression**: Optional automatic next round when all challenges are completed
 - **Difficulty Scaling**: Balance gameplay from beginner-friendly to expert mode
 - **Flexible Settings**: All configurations adjustable before game start
 
@@ -93,6 +94,7 @@ products:
    lr:configset hardChallengeCount 2        # Set hard challenges per round
    lr:configset totalRounds 4               # Set number of rounds
    lr:configset roundDurationTicks 18000    # Set round duration (15 min)
+   lr:configset autoNextRound true          # Auto-start next round when all challenges complete
    ```
 
    **Note**: Total challenges (easy + medium + hard) should not exceed 10 for optimal HUD display.
@@ -199,13 +201,14 @@ Rare items and special loot:
 
 Configure before running `lr:start`:
 
-| Setting           | Command                                 | Default | Range      | Description                      |
-| ----------------- | --------------------------------------- | ------- | ---------- | -------------------------------- |
-| Easy Challenges   | `lr:configset easyChallengeCount <n>`   | 6       | 0-10       | Easy challenges per round        |
-| Medium Challenges | `lr:configset mediumChallengeCount <n>` | 3       | 0-10       | Medium challenges per round      |
-| Hard Challenges   | `lr:configset hardChallengeCount <n>`   | 1       | 0-10       | Hard challenges per round        |
-| Total Rounds      | `lr:configset totalRounds <n>`          | 4       | 1-10       | Number of rounds in game         |
-| Round Duration    | `lr:configset roundDurationTicks <n>`   | 18000   | 1200-72000 | Ticks per round (18000 = 15 min) |
+| Setting           | Command                                 | Default | Range        | Description                                         |
+| ----------------- | --------------------------------------- | ------- | ------------ | --------------------------------------------------- |
+| Easy Challenges   | `lr:configset easyChallengeCount <n>`   | 6       | 0-10         | Easy challenges per round                           |
+| Medium Challenges | `lr:configset mediumChallengeCount <n>` | 3       | 0-10         | Medium challenges per round                         |
+| Hard Challenges   | `lr:configset hardChallengeCount <n>`   | 1       | 0-10         | Hard challenges per round                           |
+| Total Rounds      | `lr:configset totalRounds <n>`          | 4       | 1-10         | Number of rounds in game                            |
+| Round Duration    | `lr:configset roundDurationTicks <n>`   | 18000   | 1200-72000   | Ticks per round (18000 = 15 min)                    |
+| Auto Next Round   | `lr:configset autoNextRound <boolean>`  | false   | true / false | Auto-start next round when all challenges completed |
 
 ### Recommended Configurations
 
@@ -269,7 +272,7 @@ All commands require **GameDirectors** permission (Operator level 1+):
 | `lr:configset <key> <value>` | Set a configuration value           |
 | `lr:configreset`             | Reset all settings to defaults      |
 
-**Valid keys**: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`
+**Valid keys**: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`, `autoNextRound`
 
 ### Game Management
 
