@@ -260,12 +260,13 @@ export class GameStateManager {
     world.sendMessage("§6[LOOT RUSH] §fAll challenges completed! Starting next round in 5 seconds...");
 
     // Wait 5 seconds before transitioning to give players time to see the message
+    // Standard Minecraft timing: 20 ticks per second, so 100 ticks = 5 seconds
     this.autoTransitionTimeoutHandle = system.runTimeout(() => {
       if (this.isGameActive() && !this.isTransitioning) {
         this.transitionToNextRound();
       }
       this.autoTransitionTimeoutHandle = undefined;
-    }, 100); // 5 seconds = 100 ticks
+    }, 100);
   }
 
   private registerChallengeCompletionCallback(): void {

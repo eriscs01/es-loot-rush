@@ -226,6 +226,7 @@ export class ChallengeManager {
   }
 
   areAllChallengesCompleted(): boolean {
+    // Return false if there are no challenges (edge case that shouldn't trigger auto-transition)
     return this.activeChallenges.length > 0 && this.activeChallenges.every((c) => c.state === "completed");
   }
 
