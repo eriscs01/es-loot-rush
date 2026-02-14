@@ -17,6 +17,7 @@ export class ChallengeManager {
   private monitorHandle?: number;
   private readonly debugLogger: DebugLogger;
   private onAllChallengesCompletedCallback?: () => void;
+  private allChallengesCompletedTriggered = false;
 
   constructor(
     private readonly propertyStore: PropertyStore,
@@ -76,6 +77,7 @@ export class ChallengeManager {
     this.persistActive();
     this.completedChallenges = [];
     this.persistCompleted();
+    this.allChallengesCompletedTriggered = false; // Reset flag for new round
     this.debugLogger?.log(`Selected challenges: ${selections.map((c) => c.id).join(", ")}`);
     return this.getActiveChallenges();
   }
@@ -191,8 +193,13 @@ export class ChallengeManager {
 
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
 
-    // Check if all challenges are completed
-    if (this.areAllChallengesCompleted() && this.onAllChallengesCompletedCallback) {
+    // Check if all challenges are completed and trigger callback only once
+    if (
+      !this.allChallengesCompletedTriggered &&
+      this.areAllChallengesCompleted() &&
+      this.onAllChallengesCompletedCallback
+    ) {
+      this.allChallengesCompletedTriggered = true;
       this.debugLogger?.log("All challenges completed, triggering callback");
       this.onAllChallengesCompletedCallback();
     }
@@ -203,6 +210,7 @@ export class ChallengeManager {
   resetChallenges(): void {
     this.activeChallenges = [];
     this.completedChallenges = [];
+    this.allChallengesCompletedTriggered = false;
     this.propertyStore.setString(DYNAMIC_KEYS.activeChallenges, "[]");
     this.propertyStore.setString(DYNAMIC_KEYS.completedChallenges, "[]");
   }

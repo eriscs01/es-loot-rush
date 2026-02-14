@@ -26,6 +26,8 @@ export class GameStateManager {
   private pauseEffectHandle?: number;
   private initialized = false;
   private readonly debugLogger: DebugLogger;
+  private autoTransitionTimeoutHandle?: number;
+  private isTransitioning = false;
 
   constructor(
     private readonly propertyStore: PropertyStore,
@@ -87,9 +89,7 @@ export class GameStateManager {
     this.teamManager.registerPlayerHandlers();
 
     // Set up callback for auto next round
-    this.challengeManager.setOnAllChallengesCompletedCallback(() => {
-      this.onAllChallengesCompleted();
-    });
+    this.registerChallengeCompletionCallback();
 
     // Initialize and show scoreboard
     this.scoreboardManager.initializeScoreboard();
@@ -110,6 +110,12 @@ export class GameStateManager {
     this.stopRoundTimer();
     this.challengeManager.stopMonitoring();
     this.teamManager.unregisterPlayerHandlers();
+
+    // Clear any pending auto-transition timeout
+    if (this.autoTransitionTimeoutHandle !== undefined) {
+      system.clearRun(this.autoTransitionTimeoutHandle);
+      this.autoTransitionTimeoutHandle = undefined;
+    }
 
     // Hide scoreboard on game end
     this.scoreboardManager.hideScoreboard();
@@ -190,8 +196,22 @@ export class GameStateManager {
   }
 
   transitionToNextRound(): void {
+    // Prevent double transitions
+    if (this.isTransitioning) {
+      this.debugLogger?.log("Already transitioning, skipping duplicate call");
+      return;
+    }
+    this.isTransitioning = true;
+
+    // Clear any pending auto-transition timeout
+    if (this.autoTransitionTimeoutHandle !== undefined) {
+      system.clearRun(this.autoTransitionTimeoutHandle);
+      this.autoTransitionTimeoutHandle = undefined;
+    }
+
     if (this.currentRound >= this.totalRounds) {
       this.endGame(true);
+      this.isTransitioning = false;
       return;
     }
 
@@ -209,14 +229,14 @@ export class GameStateManager {
     this.challengeManager.monitorCompletion(challenges);
 
     // Re-set callback for the new round
-    this.challengeManager.setOnAllChallengesCompletedCallback(() => {
-      this.onAllChallengesCompleted();
-    });
+    this.registerChallengeCompletionCallback();
 
     const players = this.teamManager.getAllPlayers();
     const roundMessage = `§6[LOOT RUSH] §fRound §e${this.currentRound}§f of §e${this.totalRounds}§f begins!`;
     world.sendMessage(roundMessage);
     this.audioManager?.playStartHorn(players);
+
+    this.isTransitioning = false;
   }
 
   forceRound(roundNumber: number): void {
@@ -240,11 +260,18 @@ export class GameStateManager {
     world.sendMessage("§6[LOOT RUSH] §fAll challenges completed! Starting next round in 5 seconds...");
 
     // Wait 5 seconds before transitioning to give players time to see the message
-    system.runTimeout(() => {
-      if (this.isGameActive()) {
+    this.autoTransitionTimeoutHandle = system.runTimeout(() => {
+      if (this.isGameActive() && !this.isTransitioning) {
         this.transitionToNextRound();
       }
+      this.autoTransitionTimeoutHandle = undefined;
     }, 100); // 5 seconds = 100 ticks
+  }
+
+  private registerChallengeCompletionCallback(): void {
+    this.challengeManager.setOnAllChallengesCompletedCallback(() => {
+      this.onAllChallengesCompleted();
+    });
   }
 
   private registerPauseGuards(): void {
