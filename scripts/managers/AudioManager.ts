@@ -58,6 +58,14 @@ export class AudioManager {
     players.forEach((player) => this.playSound(player, "note.bass"));
   }
 
+  playBookOpen(player: Player): void {
+    this.playSound(player, "item.book.open_flip2");
+  }
+
+  playBookClose(player: Player): void {
+    this.playSound(player, "item.book.close_put1");
+  }
+
   private playSound(player: Player, soundId: string, pitch?: number): void {
     try {
       system.run(() => {

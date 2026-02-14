@@ -2,6 +2,7 @@ import { world, Player, ItemStack, system, ItemUseBeforeEvent } from "@minecraft
 import { ActionFormData } from "@minecraft/server-ui";
 import { ChallengeManager } from "./ChallengeManager";
 import { TeamManager } from "./TeamManager";
+import { AudioManager } from "./AudioManager";
 import { PropertyStore } from "./PropertyStore";
 import { DYNAMIC_KEYS } from "../config/constants";
 import { DebugLogger } from "./DebugLogger";
@@ -16,12 +17,13 @@ export class BookManager {
 
   constructor(
     private readonly propertyStore: PropertyStore,
-    // Used in showChallengesForm() to get active challenges
-    // eslint-disable-next-line no-unused-vars
     private readonly challengeManager: ChallengeManager,
-    // eslint-disable-next-line no-unused-vars
-    private readonly teamManager: TeamManager
+    private readonly teamManager: TeamManager,
+    private readonly audioManager: AudioManager
   ) {
+    void challengeManager;
+    void teamManager;
+    void audioManager;
     this.debugLogger = new DebugLogger(propertyStore);
   }
 
@@ -209,8 +211,14 @@ export class BookManager {
         form.button(buttonText, challenge.icon);
       });
 
+      // Play book open sound
+      this.audioManager.playBookOpen(player);
+
       // Show the form
       const response = await form.show(player);
+
+      // Play book close sound when form is closed
+      this.audioManager.playBookClose(player);
 
       // The form is display-only, so we don't need to handle the response
       // Players just view the challenges
