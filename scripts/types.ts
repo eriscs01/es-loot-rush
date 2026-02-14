@@ -26,4 +26,5 @@ export interface GameConfig {
   hardChallengeCount: number;
   totalRounds: number;
   roundDurationTicks: number;
+  autoNextRound: boolean;
 }

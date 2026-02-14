@@ -16,6 +16,8 @@ export class ChallengeManager {
   private completedChallenges: ChallengeRecord[] = [];
   private monitorHandle?: number;
   private readonly debugLogger: DebugLogger;
+  private onAllChallengesCompletedCallback?: () => void;
+  private allChallengesCompletedTriggered = false;
 
   constructor(
     private readonly propertyStore: PropertyStore,
@@ -75,6 +77,7 @@ export class ChallengeManager {
     this.persistActive();
     this.completedChallenges = [];
     this.persistCompleted();
+    this.allChallengesCompletedTriggered = false; // Reset flag for new round
     this.debugLogger?.log(`Selected challenges: ${selections.map((c) => c.id).join(", ")}`);
     return this.getActiveChallenges();
   }
@@ -189,12 +192,25 @@ export class ChallengeManager {
     this.scoreboardManager.updateScores(crimson, azure);
 
     this.debugLogger?.log(`Challenge ${challenge.id} completed by ${team}; required items consumed`);
+
+    // Check if all challenges are completed and trigger callback only once
+    if (
+      !this.allChallengesCompletedTriggered &&
+      this.areAllChallengesCompleted() &&
+      this.onAllChallengesCompletedCallback
+    ) {
+      this.allChallengesCompletedTriggered = true;
+      this.debugLogger?.log("All challenges completed, triggering callback");
+      this.onAllChallengesCompletedCallback();
+    }
+
     return true;
   }
 
   resetChallenges(): void {
     this.activeChallenges = [];
     this.completedChallenges = [];
+    this.allChallengesCompletedTriggered = false;
     this.propertyStore.setString(DYNAMIC_KEYS.activeChallenges, "[]");
     this.propertyStore.setString(DYNAMIC_KEYS.completedChallenges, "[]");
   }
@@ -207,6 +223,15 @@ export class ChallengeManager {
   getCompletedChallenges(): ChallengeRecord[] {
     this.completedChallenges = this.propertyStore.getJSON<ChallengeRecord[]>(DYNAMIC_KEYS.completedChallenges, []);
     return [...this.completedChallenges];
+  }
+
+  areAllChallengesCompleted(): boolean {
+    // Return false if there are no challenges (edge case that shouldn't trigger auto-transition)
+    return this.activeChallenges.length > 0 && this.activeChallenges.every((c) => c.state === "completed");
+  }
+
+  setOnAllChallengesCompletedCallback(callback: () => void): void {
+    this.onAllChallengesCompletedCallback = callback;
   }
 
   private persistActive(): void {

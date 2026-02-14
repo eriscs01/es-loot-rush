@@ -8,6 +8,7 @@ const DEFAULT_CONFIG: GameConfig = {
   hardChallengeCount: 1,
   totalRounds: 4,
   roundDurationTicks: 20 * 60 * 15, // 20 ticks in 60 seconds
+  autoNextRound: false,
 };
 
 export class ConfigManager {

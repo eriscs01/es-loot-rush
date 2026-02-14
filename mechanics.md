@@ -20,6 +20,8 @@ The game can be configured using admin commands before starting:
 - **Game Length**:
   - Total rounds (default: 4)
   - Round duration in minutes (default: 15 minutes)
+- **Round Progression**:
+  - Auto next round (default: false) - Automatically start next round when all challenges are completed
 
 **Configuration Commands** (must be set before game starts):
 
@@ -27,7 +29,7 @@ The game can be configured using admin commands before starting:
 - `lr:configset <key> <value>` - Modify a setting
 - `lr:configreset` - Reset to defaults
 
-**Example**: To create a shorter game with more challenges:
+**Example**: To create a shorter game with more challenges and auto-progression:
 
 ```
 lr:configset totalRounds 3
@@ -35,6 +37,7 @@ lr:configset roundDurationTicks 12000
 lr:configset easyChallengeCount 5
 lr:configset mediumChallengeCount 3
 lr:configset hardChallengeCount 2
+lr:configset autoNextRound true
 ```
 
 **Important**: The total number of challenges (easy + medium + hard) cannot exceed 10 per round due to HUD display limitations. If your configuration exceeds this limit, only the first 10 challenges will be displayed and tracked.
@@ -69,12 +72,14 @@ Each round (default duration: 15 minutes):
 4. First team to deposit required items gets the points
 5. Completed challenges become locked for both teams
 6. Chest is automatically cleared upon challenge completion
+7. Round ends when timer expires OR when all challenges are completed (if auto next round is enabled)
 
 **Configuration affects**:
 
 - Number of challenges per difficulty level
 - Total number of rounds in the game
 - Duration of each round
+- Whether rounds automatically advance when all challenges are completed
 
 ### **HUD Display**
 
@@ -172,7 +177,7 @@ All commands require **GameDirectors** permission (Operator level 1+):
 
 - `lr:config` - View current configuration settings
 - `lr:configset <key> <value>` - Set a configuration value
-  - Keys: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`
+  - Keys: `easyChallengeCount`, `mediumChallengeCount`, `hardChallengeCount`, `totalRounds`, `roundDurationTicks`, `autoNextRound`
   - **Recommended**: Keep total challenges (easy + medium + hard) at 10 or fewer
 - `lr:configreset` - Reset all settings to defaults
 
